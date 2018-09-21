@@ -18,7 +18,7 @@ Read the [full tutorial here](TUTORIAL.md).
 
 ## Contributing
 Contributions are welcome; however, this tutorial reflects rules specific to Shopify and
-any meaningful changes to those will likely happen internally and not through external contributions.
+any substantial changes to those will primarily happen internally and not through external contributions.
 
 ## Code of Conduct
 Anyone who wishes to contribute through code or issues, take a look at the
