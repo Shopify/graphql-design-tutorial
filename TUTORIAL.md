@@ -765,6 +765,7 @@ following mutation arguments:
 - `delete`, `publish` and `unpublish` all simply need a single collection ID
 - `addProducts` and `removeProducts` both need the collection ID as well as a
   list of product IDs
+
 This leaves us with only three remaining "complicated" inputs to design:
 - create
 - update
