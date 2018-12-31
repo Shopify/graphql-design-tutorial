@@ -742,10 +742,10 @@ Products we split into their own mutations, because the relationship is large
 and ordered. Rules we left inline because the relationship is small, and rules
 are sufficiently minor to not have IDs.
 
-Finally, you may note that we have chosen pluralized names for our mutations,
-for example `addProducts` and not `addProduct`. This is simply a convenience for
-the client, since the common use case when manipulating this relationship will
-be to add, remove, or reorder more than one product at a time.
+Finally, you may note our product mutations act on sets of products, for example
+`addProducts` and not `addProduct`. This is simply a convenience for the client,
+since the common use case when manipulating this relationship will be to add,
+remove, or reorder more than one product at a time.
 
 *Rule #16: When writing separate mutations for relationships, consider whether
  it would be useful for the mutations to operate on multiple elements at once.*
