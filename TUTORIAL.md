@@ -593,16 +593,16 @@ We now have a minimal but well-designed GraphQL API for collections. There is a
 lot of detail to collections that we haven't dealt with - any real
 implementation of this feature would need a lot more fields to deal with things
 like product sort order, publishing, etc. - but as a rule those fields will all
-follow the same design patterns layed out here. However, there are still a few
+follow the same design patterns laid out here. However, there are still a few
 things which bear looking at in more detail.
 
 For this section, it is most convenient to start with a motivating use case from
 the hypothetical client of our API. Let us therefore imagine that the client
 developer we have been working with needs to know something very specific:
-whether a given product is a member of a collection or not. Of course this is
+whether a given product is a member of a collection or not. Of course, this is
 something that the client can already answer with our existing API: we expose
 the complete set of products in a collection, so the client simply has to
-iterate through looking for the product they care about.
+iterate through, looking for the product they care about.
 
 This solution has two problems though. The first, obvious problem is that it's
 inefficient; collections can contain millions of products, and having the client
@@ -738,14 +738,14 @@ of factors to consider:
 - removeProducts
 - reorderProducts
 
-Products we split into their own mutations, because the relationship is large,
+Products we split into their own mutations, because the relationship is large
 and ordered. Rules we left inline because the relationship is small, and rules
 are sufficiently minor to not have IDs.
 
-Finally, you may note that we have mutations like `addProducts` and not
-`addProduct`. This is simply a convenience for the client, since the common use
-case when manipulating this relationship will be to add, remove, or reorder more
-than one product at a time.
+Finally, you may note that we have chosen pluralized names for our mutations,
+for example `addProducts` and not `addProduct`. This is simply a convenience for
+the client, since the common use case when manipulating this relationship will
+be to add, remove, or reorder more than one product at a time.
 
 *Rule #16: When writing separate mutations for relationships, consider whether
  it would be useful for the mutations to operate on multiple elements at once.*
@@ -778,7 +778,7 @@ we can start with something like this:
 
 ```graphql
 type Mutation {
-  collectionDelete(id: ID!)
+  collectionDelete(collectionId: ID!)
   collectionPublish(collectionId: ID!)
   collectionUnpublish(collectionId: ID!)
   collectionAddProducts(collectionId: ID!, productIds: [ID!]!)
@@ -846,7 +846,7 @@ It is important to note, though, that this is not an invitation to weakly-type
 all your inputs. We still use strongly-typed enums for the `field` and
 `relation` values on our rule input, and we would still use strong typing for
 certain other inputs like `DateTime`s if we had any in this example. The key
-differentiating factors are the complexity of client-side validation, and the
+differentiating factors are the complexity of client-side validation and the
 ambiguity of the format. HTML is a well-defined, unambiguous specification, but
 is quite complex to validate. On the other hand, there are hundreds of ways to
 represent a date or time as a string, all of them reasonably simple, so it
@@ -865,16 +865,16 @@ Continuing on to the update mutation, it might look something like this:
 type Mutation {
   # ...
   collectionCreate(title: String!, ruleSet: CollectionRuleSetInput, image: ImageInput, description: String)
-  collectionUpdate(id: ID!, title: String, ruleSet: CollectionRuleSetInput, image: ImageInput, description: String)
+  collectionUpdate(collectionId: ID!, title: String, ruleSet: CollectionRuleSetInput, image: ImageInput, description: String)
 }
 ```
 
 You'll note that this is very similar to our create mutation, with two
-differences: an `id` argument was added which determines which collection to
-update, and `title` is no longer required since the collection must already have
-one.  Ignoring the title's required status for a moment our example mutations
-have four duplicate arguments, and a complete collections model would include
-quite a few more.
+differences: a `collectionId` argument was added, which determines which
+collection to update, and `title` is no longer required since the collection
+must already have one. Ignoring the title's required status for a moment, our
+example mutations have four duplicate arguments, and a complete collections
+model would include quite a few more.
 
 While there are some arguments for leaving these mutations as-is, we have
 decided that situations like this call for DRYing up the common portions of the
@@ -892,7 +892,7 @@ the title is required on creation. Our schema ends up looking like this:
 type Mutation {
   # ...
   collectionCreate(collection: CollectionInput!)
-  collectionUpdate(id: ID!, collection: CollectionInput!)
+  collectionUpdate(collectionId: ID!, collection: CollectionInput!)
 }
 
 input CollectionInput {
@@ -933,14 +933,14 @@ type UserError {
 
 Here, a successful mutation would return an empty list for `userErrors` and
 would return the newly-created collection for the `collection` field. An
-unsuccessful one would return one or more `UserError` objects, and null for the
-collection.
+unsuccessful mutation would return one or more `UserError` objects, and `null`
+for the collection.
 
 *Rule #22: Mutations should provide user/business-level errors via a
  `userErrors` field on the mutation payload. The top-level query errors entry is
  reserved for client and server-level errors.*
 
-In many implementations, much of this structure is provided automatically and
+In many implementations, much of this structure is provided automatically, and
 all you will have to define is the `collection` return field.
 
 For the update mutation, we follow exactly the same pattern:
@@ -953,7 +953,7 @@ type CollectionUpdatePayload {
 ```
 
 It's worth noting that `collection` is still nullable even here, since if the
-provided ID doesn't represent a valid collection there is no collection to
+provided ID doesn't represent a valid collection, there is no collection to
 return.
 
 *Rule #23: Most payload fields for a mutation should be nullable, unless there
