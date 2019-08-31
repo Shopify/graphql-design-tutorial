@@ -1,57 +1,46 @@
 # Tutorial: Designing a GraphQL API
 
-This tutorial was created by [Shopify](https://www.shopify.ca/) for internal
-purposes. We've created a public version of it since we think it's useful to
-anyone creating a GraphQL API.
+이 튜토리얼은 내부적인 목적을 위해 [Shopify](https://www.shopify.ca/)에서 만들어졌습니다. 
+누구나 graphQL API를 만들기에 유용하다고 생각했기 때문에 우리는 이것을 공개하기로 했습니다.
 
-It's based on lessons learned from creating and evolving production schemas at
-Shopify over almost 3 years. The tutorial has evolved and will continue to
-change in the future so nothing is set in stone.
+거의 3년이 넘는 시간 동안 만들어진 Shopify의 프로덕션 스키마들로부터 배운 것들을 바탕으로 만들었습니다. 
+이 튜토리얼도 많이 발전해왔고, 미래에도 계속해서 바뀔 예정입니다. 정해진 것은 없습니다.
 
-We believe these design guidelines work in most cases. They may not all work
-for you. Even within the company we still question them and have exceptions
-since most rules can't apply 100% of the time. So don't just blindly copy and
-implement all of them. Pick and choose which ones make sense for you and your
-use cases.
- 
+우리는 스키마 디자인 가이드가 대부분의 경우에 유용할 것이라고 생각합니다. 어쩌면 당신에게는 맞지 않을 수도 있겠네요. 
+대부분의 규칙이 항상 100% 적용되는 것은 아니기 때문에, Shopify 내부에서도 여전히 그 문제에 대한 답을 찾고 있고,
+여러 예외 사항도 존재합니다. 그러니, 당신에게 맞는 것을 선택하시길 바랍니다.
+
 ## Intro
 
-Welcome! This document will walk you through designing a new GraphQL API (or a
-new piece of an existing GraphQL API). API design is a challenging
-task that strongly rewards iteration, experimentation, and a thorough
-understanding of your business domain.
+환영합니다! 이 문서는 당신에게 새로운 graphQL을 (또는 이밎 존재하는 graphQL API에 새 API를) 디자인하는 방법을
+차근차근 알려줄 거예요. API 디자인은 반복과 실험, 그리고 당신의 비즈니스 도메인에 대한 이해가 필요한 어려운 일이지만요. 
 
 ## Step Zero: Background
 
-For the purposes of this tutorial, imagine you work at an e-commerce company.
-You have an existing GraphQL API exposing information about your products, but
-very little else. However, your team just finished a project implementing
-"collections" in the back-end and wants to expose collections over the API as
-well.
+이 튜토리얼의 목적을 위해, 당신이 e-commerce 기업에서 일하고 있다고 상상해보시기 바랍니다. 
+당신은 이미 존재하는 graphQL API를 갖고 있습니다. 이 API는 제품들에 대한 정보를 외부에 노출하고 있지만, 그렇게 많은 정보는 아닙니다.
+그런데, 당신의 팀은 백엔드에서 "collections"를 구현하는 프로젝트를 방금 끝냈고 기존에 존재하는 API에 그 Collections를 노출시키기 원합니다.
 
-Collections are the new go-to method for grouping products; for example, you
-might have a collection of all of your t-shirts. Collections can be used for
-display purposes when browsing your website, and also for programmatic tasks
-(e.g. you may want to make a discount only apply to products in a certain
-collection).
+Collections는 제품을 그룹핑하는 새로운 go-to 함수입니다. 예를 들어, 당신이 티셔츠 collection을 갖고 있다고 해봅시다.
+Collection은 당신의 웹사이트를 볼 때, 화면에 띄워주는 용도로 사용될 수 있습니다. 또한, 프로그래밍 업무를 위해서도 사용될 수 있죠. 
+(예를 들면, 당신이 특정 collection에 대해서만 할인을 적용하고 싶을 때 적용할 수 있겠네요.)
 
-On the back-end, your new feature has been implemented as follows:
-- All collections have some simple attributes like a title, a description body
-  (which may include HTML formatting), and an image.
-- You have two specific kinds of collections: "manual" collections where you
-  list the products you want them to include, and "automatic" collections where
-  you specify some rules and let the collection populate itself.
-- Since the product-to-collection relationship is many-to-many, you've got a
-  join table in the middle called `CollectionMembership`.
-- Collections, like products before them, can be either published (visible on
-  the storefront) or not.
+백엔드에서는, 다음과 같은 것들을 통해 앞으로의 계획이 그려지고 있습니다.
 
-With this background, you're ready to start thinking about your API design.
+- 모든 collection들은 제목, 요약(HTML 포맷팅(<역주>html 태그 같은 것들)을 포함하는), 이미지와 같은 간단한 속성들을 갖고 있습니다, 
+- Collection에는 두 가지 동류가 있습니다. : 당신이 원하는 것들을 포함시키기 위해 직접 리스트업하는 "수동적인" collection들, 그리고 
+ 어떤 규칙을 정해놓고, collection들이 알아서 채워질 수 있도록 하는 "자동적인" collection들이 있습니다.
+- 제품과 collection 관계는 다대다 관계이므로, 중간에 'CollectionMembership'이라는 조인 테이블을 갖고 있습니다.
+- 제품과 같은 collections은 사이트 앞단에 그려질 수도 있고 그렇지 않을 수도 있습니다. (<역주>사이트에 보여주는 용도로 쓰거나, 프로그래밍적 용도로 쓰거나)
 
-## Step One: A Bird's-Eye View
+이러한 배경을 가지고, 어떻게 API를 설계할 수 있을 지 생각해보기로 합시다.
 
-A naive version of the schema might look something like this (leaving out all
-the pre-existing types like `Product`):
+## Step One: A Bird's-Eye View (<역주> 조감도, 하늘에서 새가 내려다 보듯 전체적인 구성을 봅다)
+
+단순한(또는 무식한) 방법으로 만든 스키마는 다음과 같이 구성할 수 있습니다. 
+(`Product`같이 이미 존재하는 타입들은 모두 생략합시다.)
+
+
 ```graphql
 interface Collection {
   id: ID!
@@ -91,10 +80,9 @@ type CollectionMembership {
 }
 ```
 
-This is already decently complicated at a glance, even though it's only four
-objects and an interface. It also clearly doesn't implement all of the features
-that we would need if we're going to be using this API to build out e.g. our
-mobile app's collection feature.
+한 눈에 보기에도 상당히 복잡해보입니다. 4개의 객체와 하나의 인터페이스만 있을 뿐인데도요.
+또한, 우리가 이 API를 이용해 모바일 앱의 collection 특징 같은 것을 구축하려고 한다면,
+이 스키마는 우리가 필요로 하는 모든 특징을 명확히 구현하고 있는 것도 아닙니다.
 
 Let's take a step back. A decently complex GraphQL API will consist of many
 objects, related via multiple paths and with dozens of fields. Trying to design
@@ -104,6 +92,15 @@ their relations without worrying about specific fields or mutations.
 Basically think of an [Entity-Relationship model](https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model)
 but with a few GraphQL-specific bits thrown in. If we shrink our naive schema
 down like that, we end up with the following:
+
+한 발짝 뒤로 가봅시다. 복잡한 graphQL API는 다양한 경로와 몇 십개의 필드를 통해 많은 객체들을 구성하게 됩니다.
+이런 API를 모두 한 번에 설계하려고 하는 것은 혼란과 실수를 야기하기 좋은 방법입니다. 
+처음부터 구체적으로 시작하기보다는 더 높은 곳에서 바라보는 것부터 시작하는 게 좋습니다. 
+구체적인 field나 mutation들은 걱정하지 말고, 일단 type과 그들의 관계에만 집중해보세요.
+
+하지만, 'with a few GraphQL-specific bits thrown in'하는 경우, 기본적으로 ERD([Entity-Relationship model](https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model))에 대해 생각해봅시다.
+
+만약 위의 단순한 스키마를 줄이고 싶다면, 다음과 같은 방법을 시도해봅시다.
 
 ```graphql
 interface Collection {
@@ -130,41 +127,34 @@ type CollectionMembership {
 }
 ```
 
-To get this simplified representation, I took out all scalar fields, all field
-names, and all nullability information. What you're left with still looks kind
-of like GraphQL but lets you focus on higher level of the types and their
-relationships.
+더 간단한 스키마를 얻기 위해, 모든 스칼라 field와 field 이름, nullable한 정보는 뺐습니다.
+남겨진 것들은 graphQL과 여전히 비슷하지만, 더 높은 수준의 type과 그 관계에 집중할 수 있게 합니다. 
 
-*Rule #1: Always start with a high-level view of the objects and their
-relationships before you deal with specific fields.*
+*규칙 #1: 구체적인 필드를 다루기 전에, 항상 객체들과 그 사이의 관계를 높은 수준에서 바라보는 것부터 시작하세요.*
+(<역주> 나무를 보기 전에 숲을 먼저 보세요.)
 
 ## Step Two: A Clean Slate
 
-Now that we have something simple to work with, we can address the major flaws
-with this design.
+우리는 우리 API를 다루기 좀 더 간단한 것으로 만들었고, 이제 이 설계에 있는 큰 결함을 해결할 수 있습니다. 
 
-As previously mentioned, our implementation defines the existence of manual and
-automatic collections, as well as the use of a collector join table. Our naive
-API design was clearly structured around our implementation, but this was a
-mistake.
+이전에 말씀드린 것처럼, 우리가 만든 구현은 수동적이고 자동적인 collection들을 정의하고 있습니다. 
+단순한(무식한) API 디자인은 우리의 구현에 대해서는 명확히 짜여졌습니다만, 이건 잘못된 방법입니다. 
 
-The root problem with this approach is that an API operates for a different
-purpose than an implementation, and frequently at a different level of
-abstraction. In this case, our implementation has led us astray on a number of
-different fronts.
+이 접근 방법의 가장 근본적인 문제는, API는 '구현과는 다른 목적으로, 그리고 종종 다른 추상화 레벨에서 동작한다'는 것입니다.
+이 경우, 우리의 구현은 많은 다른 프론트 단에서 실수를 유발하도록 할 수 있습니다.
 
 ### Representing `CollectionMembership`s
 
-The one that may have stood out to you already, and is hopefully fairly obvious,
-is the inclusion of the `CollectionMembership` type in the schema. The collection memberships table is
-used to represent the many-to-many relationship between products and collections.
-Now read that last sentence again: the relationship is *between products and
-collections*; from a semantic, business domain perspective, collection memberships have
-nothing to do with anything. They are an implementation detail.
+가장 눈에 띄는 것, 가장 명확한 것은 스키마 안에 `CollectionMembership` type이 포함되어 있다는 것입니다. 
+collection memberships table은 product와 collection들 간의 다대다 관계를 표현하기 위해 사용됩니다.
+자, 마지막 문장을 다시 읽어봅시다. *product와 collection들 간의* 관계입니다. 
+비즈니스 관점에서는 collection membership 그 자체가 하는 것이 아무 것도 없습니다. 
+그것은 그저 구현의 세부사항일 뿐입니다.
 
-This means that they don't belong in our API. Instead, our API should expose the
-actual business domain relationship to products directly. If we take out
-collection memberships, the resulting high-level design now looks like:
+이것은 collection membership이 우리 API에 포함되지 않는다는 것을 의미합니다. 
+우리 API는 실질적인 비즈니스 도메인 관계를 제품에 직접적으로 노출시키길 원합니다. 
+
+우리가 collection membership을 뺀다면, 높은 수준에서의 설계는 다음과 같이 보일 것입니다. 
 
 ```graphql
 interface Collection {
@@ -186,29 +176,22 @@ type ManualCollection implements Collection {
 type AutomaticCollectionRule { }
 ```
 
-This is much better.
+훨씬 낫네요.
 
-*Rule #2: Never expose implementation details in your API design.*
+*규칙 #2: API를 설계할 때, 구현상의 디테일은 노출시키지 마세요.*
 
 ### Representing Collections
 
-This API design still has one major flaw, though it's one that's probably much
-less obvious without a really thorough understanding of the business domain. In
-our existing design, we model AutomaticCollections and ManualCollections as two
-different types, each implementing a common Collection interface. Intuitively
-this makes a fair bit of sense: they have a lot of common fields, but are
-still distinctly different in their relationships (AutomaticCollections have
-rules) and some of their behaviour.
+이 API 디자인은 여전히 한 가지 중요한 결함을 갖고 있습니다. 비즈니스 도메인에 대한 이해 없이는, 아마 덜 느껴질 것입니다.
+이 설계에서, 우리는  AutomaticCollections와 ManualCollections를 두 개의 다른 type으로 모델링했습니다.
+그리고 이 두 type은 각각 공통적으로 Collection interface를 상속합니다. 직관적으로 보면 말이 되는 것처럼 보이기도 합니다.
+그들 사이에는 많은 공통의 field가 존재하지만, 여전히 그들의 관계나 동작하는 방식은 많이 다릅니다. (AutomaticCollections는 규칙을 갖고 있죠.)
 
-But from a business model perspective, these differences are also basically an
-implementation detail. The defining behaviour of a collection is that it groups
-products; the method of choosing those products is secondary. We could expand
-our implementation at some point to permit some third method of choosing
-products (machine learning?) or to permit mixing methods (some rules and some
-manually added products) and *they would still just be collections*. You could
-even argue that the fact we don't permit mixing right now is an implementation
-failure. All of this to say is that the shape of our API should really look more
-like this:
+비즈니스 모델 관점으로부터, 이러한 차이점은 기본적으로 구현상의 디테일일 뿐입니다. collection의 정의는 제품을 그룹핑하는 것이었습니다.
+그러한 제품들을 선택하는 함수(자동이냐, 수동이냐)는 두번째입니다. 우리는 제품을 선택하는 세번째 함수를 허용하거나, 함수를 섞도록
+(수동적으로 제품을 추가하는 방법과 어떤 규칙들을 섞도록) 어느 시점에서 구현을 확장할 수 있습니다. 
+그리고 그것들은 여전히 collections로 정의할 수 있습니다. 그렇다면, 당신은 왜 그 함수들을 지금 당장 섞도록 허용하지 않냐고 말할 수도 있겠네요. 
+만약 그렇게 한다면, API의 모양은 다음과 같아집니다.
 
 ```graphql
 type Collection {
@@ -220,37 +203,37 @@ type Collection {
 type CollectionRule { }
 ```
 
-That's really nice. The immediate concern you may have at this point is that
-we're now pretending ManualCollections have rules, but remember that this
-relationship is a list. In our new API design, a "ManualCollection" is just a
-Collection whose list of rules is empty.
+정말 나이스합니다! 이 시점에서 당신이 걱정할 수도 있는 것은, 우리가 ManualCollections를 
+규칙을 갖고 있는 것처럼 만들었다는 것이겠네요. 하지만, 이 관계는 리스트라는 것을 기억하세요. 
+우리의 새 API 설계에서는, "ManualCollections"는 단순히 비어있는 규칙 리스트를 가진 collection일 뿐입니다.
 
 ### Conclusion
 
-Choosing the best API design at this level of abstraction necessarily requires
-you to have a very deep understanding of the problem domain you're modeling.
-It's hard in a tutorial setting to provide that depth of context for a specific
-topic, but hopefully the collection design is simple enough that the reasoning
-still makes sense. Even if you don't have this depth of understanding
-specifically for collections, you still absolutely need it for whatever domain
-you're actually modeling. It is critically important when designing your API
-that you ask yourself these tough questions, and don't just blindly follow the
-implementation.
+추상화 단계에서 가장 최고의 API 설계를 선택하려면, 모델링하고 있는 도메인에 대해 깊게 이해하고 있어야 합니다.
+튜토리얼 환경에서는 구체적인 주제에 대한 깊은 이해를 제공하기는 힘듭니다. 하지만, collection 디자인은 추론이 가능할 정도로 충분히 간단합니다. 
+collection에 대해 깊이 이해하고 있지 않더라도, 실제로 모델링하고 있는 영역에 대해서는 깊은 이해가 필요합니다.
+당신의 API를 설계할 때, 이런 어려운 질문을 스스로 던져보는 것, 그리고 맹목적으로 구현하지 않는 것은 매우 중요한 일입니다.
 
-On a closely related note, a good API does not model the user interface either.
-The implementation and the UI can both be used for inspiration and input into
-your API design, but the final driver of your decisions must always be the
-business domain.
+관련 레퍼런스 중에서, 좋은 API는 사용자 인터페이스를 모델링하지 않는다고 합니다. 
+구현과 UI는 모두 당신의 API 설계에 있어 제공과 입력을 위해 사용될 수 있지만, 
+결정의 가장 중요한 동인은 항상 비즈니스 도메인이어야 합니다.
+
 
 Even more importantly, existing REST API choices should not necessarily be
 copied. The design principles behind REST and GraphQL can lead to very different
 choices, so don't assume that what worked for your REST API is a good choice for
 GraphQL.
 
+더 중요하게는, 기존의 REST API를 복사하지 않는 것이 좋습니다. REST와 GraphQL의 설계 원칙은 다른 영역입니다. 
+그러므로 당신의 REST API에 동작하는 것이 GraphQL에서도 좋은 선택이 될 것이라 가정하시면 안됩니다.
+
 As much as possible let go of your baggage and start from scratch.
+가능한 당신의 짐을 최대한 내려놓고, 처음부터 시작하시길 바랍니다.
 
 *Rule #3: Design your API around the business domain, not the implementation,
 user-interface, or legacy APIs.*
+
+*Rule #3: 구현도 UI도 기존 API도 아닌, 비즈니스 도메인에 맞춰 API를 설계하세요.*
 
 ## Step Three: Adding Detail
 
