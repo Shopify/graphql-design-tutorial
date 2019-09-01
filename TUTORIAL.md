@@ -23,7 +23,7 @@ Collections는 제품을 그룹핑하는 새로운 go-to 함수입니다. 예를
 
 - 모든 collection들은 title, description(HTML 포맷팅(<역주>html 태그 같은 것들)을 포함하는), image와 같은 간단한 속성들을 갖고 있습니다, 
 - Collection에는 두 가지 동류가 있습니다. : 당신이 원하는 것들을 포함시키기 위해 직접 리스트업하는 "수동적인" collection들, 그리고 어떤 규칙을 정해놓고, collection들이 알아서 채워질 수 있도록 하는 "자동적인" collection들이 있습니다.
-- product와 collection 관계는 다대다 관계이므로, 중간에 'CollectionMembership'이라는 조인 테이블을 갖고 있습니다.
+- product와 collection는 다대다 관계이므로, 중간에 'CollectionMembership'이라는 조인 테이블을 갖고 있습니다.
 - product와 같은 collections은 사이트 앞단에 그려질 수도 있고 그렇지 않을 수도 있습니다. (<역주> 사이트에 보여주는 용도로 쓰거나, 프로그래밍적 용도로 쓰거나)
 
 이러한 배경을 가지고, 어떻게 API를 설계할 수 있을 지 생각해보기로 합시다.
@@ -81,7 +81,7 @@ type CollectionMembership {
 그러므로 한 발짝 뒤로 가봅시다. 복잡한 graphQL API는 다양한 경로와 몇 십개의 필드를 통해 많은 객체들을 구성하게 됩니다. 이런 API를 모두 한 번에 설계하려고 하는 것은 혼란과 실수를 야기하기 좋은 방법입니다. 
 
 처음부터 구체적으로 시작하기보다는 더 높은 곳에서 바라보는 것부터 시작하는 게 좋습니다. 
-구체적인 field나 mutation들은 걱정하지 말고, 일단 type과 그들의 관계에만 집중해보세요.
+구체적인 field나 mutation들은 걱정하지 말고, 일단 type과 그들의 relation에만 집중해보세요.
 
 하지만, 'with a few GraphQL-specific bits thrown in'(<역주> 번역 가능한 분, 부탁드립니다!)하는 경우, 기본적으로 ERD([Entity-Relationship model](https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model))에 대해 생각해봅시다.
 
@@ -112,9 +112,9 @@ type CollectionMembership {
 }
 ```
 
-더 간단한 스키마를 얻기 위해, 모든 스칼라 field와 field 이름, nullable한 정보는 뺐습니다. 남겨진 것들은 graphQL과 여전히 비슷하지만, 더 높은 수준(나무가 아닌 숲을 보는 관점으로)의 type과 그 관계에 집중할 수 있게 합니다. 
+더 간단한 스키마를 얻기 위해, 모든 스칼라 field와 field 이름, nullable한 정보는 뺐습니다. 남겨진 것들은 graphQL과 여전히 비슷하지만, 더 높은 수준(나무가 아닌 숲을 보는 관점으로)의 type과 그 relation에 집중할 수 있게 합니다. 
 
-*규칙 #1: 구체적인 필드를 다루기 전에, 항상 객체들과 그 사이의 관계를 높은 수준에서 바라보는 것부터 시작하세요.*
+*규칙 #1: 구체적인 필드를 다루기 전에, 항상 객체들과 그 사이의 relation을 높은 수준에서 바라보는 것부터 시작하세요.*
 
 
 ## Step Two: A Clean Slate
@@ -135,7 +135,7 @@ type CollectionMembership {
 그것은 그저 구현의 세부사항일 뿐입니다.
 
 이것은 collection membership이 우리 API에 포함시킬 필요가 없다는 것을 의미합니다. 
-우리 API는 실질적인 비즈니스 도메인 관계를 제품에 직접적으로 노출시키길 원합니다. 
+우리 API는 실질적인 비즈니스 도메인 relation을 제품에 직접적으로 노출시키길 원합니다. 
 
 우리가 collection membership을 뺀다면, 높은 수준에서의 설계는 다음과 같아집니다.
 
@@ -185,7 +185,7 @@ type CollectionRule { }
 ```
 
 정말 멋져요! 이 시점에서 당신이 걱정할 수도 있는 것은, 우리가 ManualCollections를 
-규칙을 갖고 있는 것처럼 만들었다는 것이겠네요. 하지만, 이 관계는 리스트라는 것을 기억하세요. 
+규칙을 갖고 있는 것처럼 만들었다는 것이겠네요. 하지만, 이 relation은 리스트라는 것을 기억하세요. 
 
 우리의 새 API 설계에서 "ManualCollections"는 단순히 비어있는 규칙 리스트를 가진 collection일 뿐입니다.
 
@@ -310,7 +310,7 @@ type CollectionRule {
 
 ### Lists and Pagination
 
-다음은 `products` 필드를 볼 차례입니다. 보기에는 안전해 보입니다. `CollectionMembership`을 제거했을 때, 이미 이 관계를 고친 뒤지만, 여기에는 또 다른 문제가 있습니다.   
+다음은 `products` 필드를 볼 차례입니다. 보기에는 안전해 보입니다. `CollectionMembership`을 제거했을 때, 이미 이 relation을 고친 뒤지만, 여기에는 또 다른 문제가 있습니다.   
 
 현재 이 필드는 products 배열을 반환하도록 정의되어있으나, collection들은 몇 십, 몇 천의 products를 가질 수 있습니다. 그리고 그 모든 것들을 하나의 배열로 모으는 것은 아주 큰 비용을 치뤄야 하며 비효율적일 수도 있습니다. 이런 상황 때문에, graphQL은 lists pagination이라는 것을 제공합니다. 
 
@@ -408,17 +408,9 @@ type CollectionRule {
 
 ### Enums
 
-This brings us to the final type in our schema, `CollectionRule`. Each rule
-consists of a column to match on (e.g. product title), a type of relation (e.g.
-equality) and an actual value to use (e.g. "Boots") which is confusingly called
-`condition`. That last field can be renamed, and so should `column`; column is
-very database-specific terminology, and we're working in GraphQL. `field` is
-probably a better choice.
+스키마의 마지막 type `CollectionRule`까지 왔습니다. 각각의 규칙은 일치하는 컬럼(예: 제품 제목), 관계 유형(예: 동등함), 사용을 위한 실질적인 값(예: "Boots(부츠)")으로 구성됩니다. 그리고 이것은 `condition`(조건)이라고 혼동되어 불리기도 합니다. 마지막 필드는 이름을 `column`으로 다시 지을 수 있습니다. 하지만, column은 데이터베이스 특유의 용어이며 우리는 GraphQL로 일하고 있습니다. 그러므로 `field`가 좀 더 나은 선택이 되겠네요.
 
-As far as types go, both `field` and `relation` are probably implemented
-internally as enumerations (assuming your language of choice even has
-enumerations). Fortunately GraphQL has enums as well, so we can convert those
-two fields to enums. Our completed schema design now looks like this:
+Type에 따라서, `field`와 `relation`은 모두 내부적으로는 열거형(enumeration)으로 구현될 수 있습니다 (선택한 언어에 enum이 있다고 가정할 경우). 다행히 GraphQL은 enum도 갖고 있습니다! 그러므로 우리는 두 필드를 enum으로 전환할 수 있습니다. 우리의 복잡한 스키마 설계는 이제 다음과 같아집니다.
 
 ```graphql
 type Collection implements Node {
@@ -462,150 +454,81 @@ enum CollectionRuleRelation {
 }
 ```
 
-*Rule #11: Use enums for fields which can only take a specific set of values.*
+*규칙 #11: 오직 특정한 값의 집합만을 취하는 필드에는 enum을 사용하세요.*
+
 
 ## Step Four: Business Logic
 
-We now have a minimal but well-designed GraphQL API for collections. There is a
-lot of detail to collections that we haven't dealt with - any real
-implementation of this feature would need a lot more fields to deal with things
-like product sort order, publishing, etc. - but as a rule those fields will all
-follow the same design patterns laid out here. However, there are still a few
-things which bear looking at in more detail.
+우리는 이제 collection들을 위한 작지만 잘 설계된 GraphQL API를 갖고 있습니다. 우리가 아직 다루지 않은 collection들에 대한 수많은 세부사항이 있습니다 - 제품을 순서대로 정렬하거나 퍼블리싱 하는 등의 문제를 다룰 때, 이 기능을 실질적으로 구현하려면 훨씬 더 많은 필드가 필요할 지도 모릅니다 - 하지만, 이러한 필드들은 모두 같은 설계 패턴을 따른다는 규칙이 있습니다. 그러나, 아직 몇 가지 더 들여다 봐야할 것들이 있습니다.
 
-For this section, it is most convenient to start with a motivating use case from
-the hypothetical client of our API. Let us therefore imagine that the client
-developer we have been working with needs to know something very specific:
-whether a given product is a member of a collection or not. Of course, this is
-something that the client can already answer with our existing API: we expose
-the complete set of products in a collection, so the client simply has to
-iterate through, looking for the product they care about.
+이 섹션을 위해, API를 사용할 가상의 클라이언트로부터 이것을 사용해야 할 동기를 얻으며 시작하는 것이 좋겠습니다. 그러므로 우리와 함께 일하는 클라이언트 개발자가 무언가 구체적인 것을 알고 싶어한다는 상상을 해봅시다: '주어진 product가 collection의 멤버인가 아닌가' 
 
-This solution has two problems though. The first, obvious problem is that it's
-inefficient; collections can contain millions of products, and having the client
-fetch and iterate through them all would be extremely slow. The second, bigger
-problem, is that it requires the client to write code. This last point is a
-critical piece of design philosophy: the server should always be the single
-source of truth for any business logic. An API almost always exists to serve
-more than one client, and if each of those clients has to implement the same
-logic then you've effectively got code duplication, with all the extra work and
-room for error which that entails.
+물론 그 클라이언트는 이미 기존의 API를 통해 이 문제에 대한 답을 알 수 있을 것입니다: 우리가 products 집합을 완전히 collection 안에 노출시켰으므로, 클라이언트는 그저 product를 찾고, 그것을 반복시키며(iterate 하여) 확인해보면 됩니다. 
 
-*Rule #12: The API should provide business logic, not just data. Complex
-calculations should be done on the server, in one place, not on the client, in
-many places.*
+그러나 이 방법에는 두 가지 문제가 있습니다. 첫번째, 비효율적입니다. collection은 수백만 개의 product를 가질 수 있습니다. 그리고 클라이언트가 product를 가져오고(fetch), 반복시키는 것은 매우 느린 일입니다. 두번째, (아주 큰 문제죠) 이것이 클라이언트로 하여금 코드를 쓰도록 요구한다는 것입니다. 이 부분은 설계 철학에 있어 아주 중요한 부분입니다. 서버는 항상 어떤 비즈니스 로직이든 단 하나의 공급자가 되어야 합니다. API는 거의 항상 하나의 클라이언트 이상에게 서비스하기 위해 존재합니다. 그리고 만약 이 클라이언트들 각각이 같은 로직을 구현해야 한다면, 이것은 오류를 수반하는 추가적인 작업과 공간(메모리)과 함께 코드의 중복을 야기합니다.
 
-Back to our client use-case, the best answer here is to provide a new field
-specifically dedicated to solving this problem. Practically, this looks like:
+*규칙 #12: API는 데이터가 아닌 비즈니스 로직을 제공해야 합니다. 복잡한 계산은 클라이언트 여러 곳에서가 아닌, 서버 한 곳에서 처리해야 합니다.*
+
+우리 클라이언트가 이 API를 활용하는 사례로 돌아가봅시다. 가장 최고의 정답은 이 문제를 해결하는 데에만 특정하게 사용될 새로운 필드를 제공하는 것입니다. 다음과 같습니다:
+
 ```graphql
 type Collection implements Node {
   # ...
   hasProduct(id: ID!): Bool!
 }
 ```
-This field takes the ID of a product and returns a boolean based on the server
-determining if a product is in the collection or not. The fact that this sort-of
-duplicates the data from the existing `products` field is irrelevant. GraphQL
-returns only what clients explicitly ask for, so unlike REST it does not cost us
-anything to add a bunch of secondary fields. The client doesn't have to write
-any code beyond querying an additional field, and the total bandwidth used is a
-single ID plus a single boolean.
 
-One follow-up warning though: just because we're providing business logic in a
-situation does not mean we don't have to provide the raw data too. Clients
-should be able to do the business logic themselves, if they have to. You can’t
-predict all of the logic a client is going to want, and there isn't always an
-easy channel for clients to ask for additional fields (though you should strive
-to ensure such a channel exists as much as possible).
+이 필드는 product의 ID를 취합니다. 그리고 서버에서 이 product가 collection에 있는지 없는 지 결정하는 대로 boolean을 반환합니다. 이미 존재하는 `products` 필드로부터 일종의 중복된 데이터를 만드는 것과는 상관 없습니다. GraphQL은 오직 클라이언트가 명시적으로 요청하는 것만 반환합니다. 따라서, REST와는 달리 부가적인 필드를 생성하는 데에 어떠한 비용도 요구하지 않습니다. 클라이언트는 추가적인 필드를 질의하는 것 이상으로는 어떤 코드도 쓸 필요 없습니다. 그리고 사용된 총 대역폭은 단일 ID + 단일 boolean 뿐입니다.
 
-*Rule #13: Provide the raw data too, even when there's business logic around it.*
+그러나 한 가지 경고가 따릅니다: 우리가 비즈니스 로직을 제공한다는 상황이 raw data(원시 데이터)를 제공해서는 안된다는 것을 의미하지는 않습니다. 만약 필요하다면, 클라이언트는 스스로 비즈니스 로직을 처리할 수 있어야 합니다. 클라이언트가 원하는 모든 로직을 예측할 수는 없습니다. 그리고 클라이언트가 추가적인 필드를 요청할 수 있는 쉬운 채널이 항상 존재하는 것도 아닙니다 (하지만 그러한 채널이 존재하도록 노력해야 합니다).
 
-Finally, don't let business-logic fields affect the overall shape of the API.
-The business domain data is still the core model. If you're finding the business
-logic doesn't really fit, then that's a sign that maybe your underlying model
-isn't right.
+*규칙 #13: 비즈니스 로직이 있을 지라도, raw data(원시 데이터)도 함께 제공하세요.*
+
+마지막으로, 비즈니스 로직 필드가 전체적인 API 모양에 영향을 주지 않도록 주의하세요. 비즈니스 도메인의 데이터는 여전히 핵심적인 모델입니다. 만약 비즈니스 로직이 정말 맞지 않는다고 생각한다면, 그것은 근본적인 모델이 적합하지 않다는 신호가 될 수 있습니다. 
+
 
 ## Step Five: Mutations
 
-The final missing piece of our GraphQL schema design is the ability to actually
-change values: creating, updating, and deleting collections and related pieces.
-As with the readable portion of the schema we should start with a high-level
-view: in this case, of just the various mutations we will want to implement,
-without worrying about their specific inputs or outputs. Naively we might follow
-the CRUD paradigm and have just `create`, `delete`, and `update` mutations.
-While this is a decent starting place, it is insufficient for a proper GraphQL
-API.
+마지막으로 GraphQL 스키마 설계에서 빠진 부분은 실제로 값을 변형시킬 수 있는 기능입니다: collection 또는 그와 관련된 부분을 생성, 수정, 제거하는 것을 말합니다. 스키마와 마찬가지로, 우리는 높은 수준의 관점에서부터 시작해야 합니다: 이 경우, 우리는 단지 구체적인 input, output을 고려할 필요 없이 mutation을 구현하길 원합니다. CRUD(Create, Read, Update, Delete) 패러다임을 따라서 그저 단순하게 `create`, `delete`, `update` mutation을 가질 수 있습니다. 괜찮은 시작이지만, 적절한 GraphQL API에는 충분하지 않습니다.  
+
 
 ### Separate Logical Actions
 
-The first thing we might notice if we were to stick to just CRUD is that our
-`update` mutation quickly becomes massive, responsible not just for updating
-simple scalar values like title but also for performing complex actions like
-publishing/unpublishing, adding/removing/reordering the products in the
-collection, changing the rules for automatic collections, etc. This makes it
-hard to implement on the server and hard to reason about for the client.
-Instead, we can take advantage of GraphQL to split it apart into more granular,
-logical actions. As a very first pass, we can split out publish/unpublish
-resulting in the following mutation list:
+만약 단순히 CRUD를 고집한다면, 우리가 제일 먼저 알 수 있는 것은 `update` mutation이 빠르게 거대해질 것이라는 겁니다. 해당 mutation에는 title과 같은 간단한 스칼라 값을 수정하는 역할만 있는 게 아닙니다. 퍼블리싱/언퍼블리싱, collection 내의 product들을 추가/제거/재정렬, 자동적인 collection의 규칙을 변형하는 등 복잡한 행위(action)를 수행하는 데에도 쓰일 수 있습니다. 이로 인해, 서버에서는 구현하기 어렵고 클라이언트는 이 mutation이 어떤 행위를 하는지 추론하기 어렵습니다(<역주> 하나의 mutation이 가진 역할이 너무 많으니, 여러 개로 분리하자는 말을 길게 써놨습니다). 대신, 우리는 좀 더 알맹이 있는 논리적인 행위(action)로 mutation을 분할하기 위해서 GraphQL의 이점을 취할 수 있습니다. 가장 먼저, 다음과 같은 mutation 리스트를 생성하여 퍼블리싱과 언퍼블리싱을 분리할 수 있습니다.
+
 - create
 - delete
 - update
 - publish
 - unpublish
 
-*Rule #14: Write separate mutations for separate logical actions on a resource.*
+*규칙 #14: 리소스 각각의 논리적 행위(action)에 맞는 각각의 mutation을 써보세요.*
+
 
 ### Manipulating Relationships
 
-The `update` mutation still has far too many responsibilities so it makes sense
-to continue splitting it up, but we will deal with these actions separately
-since they're worth thinking about from another dimension as well: the
-manipulation of object relationships (e.g. one-to-many, many-to-many). We've
-already considered the use of IDs vs embedding, and the use of pagination vs
-arrays in the read API, and there are some similar issues to deal with when
-mutating these relationships.
+`update` mutation은 여전히 너무 많은 역할을 갖고 있습니다. 그러니 이것을 분리하는 작업을 계속해봅시다. 하지만, 우리는 이 행위들(actions)을 개별적으로 다룰 것입니다. 다른 차원으로부터 생각해보는 것 또한 가치 있는 일이 될테니까요: 객체의 관계(예: 일대다, 다대다) 조작. 우리는 이미 'ID 사용 vs 객체 끼워넣기(embedding)', 그리고 API 조회에 있어 '페이지네이션 vs 배열' 사용을 고려해봤습니다. 여기에는 그 관계들을 변형시킬 때 다뤄야 할 비슷한 이슈가 있습니다.
 
-For the relationship between products and collections, there are a couple of
-styles we could broadly consider:
-- Embedding the entire relationship (e.g. `products: [ProductInput!]!`) into the
-  update mutation is the CRUD-style default, but of course it quickly becomes
-  inefficient when the list is large.
-- Embedding "delta" fields (e.g. `productsToAdd: [ID!]!` and
-  `productsToRemove: [ID!]!`) into the update mutation is more efficient since
-  only the changed IDs need to be specified instead of the entire list, but it
-  still keeps the actions tied together.
-- Splitting it up entirely into separate mutations (`addProduct`,
-  `removeProduct`, etc.) is the most powerful and flexible but also the most
-  work.
+products와 collections 사이의 관계에 대해, 우리가 광범위하게 고려해 볼 여러 스타일들이 있습니다.
 
-The last option is generally the safest call, especially since mutations like
-this will usually be distinct logical actions anyway. However, there are a lot
-of factors to consider:
-- Is the relationship large or paginated? If so, embedding the entire list is
-  definitely impractical, however either delta fields or separate mutations
-  could still work. If the relationship is always small though (especially if
-  it's one-to-one), embedding may be the simplest choice.
-- Is the relationship ordered? The product-collection relationship is ordered,
-  and permits manual reordering. Order is naturally supported by the embedded
-  list or by separate mutations (you can add a `reorderProducts` mutation)
-  but isn't an option for delta fields.
-- Is the relationship mandatory? Products and collections can both exist on
-  their own outside of the relationship, with their own create/delete lifecycle.
-  If the relationship were mandatory (i.e. products must be in a collection)
-  then this would strongly suggest separate mutations because the action would
-  actually be to *create* a product, not just to update the relationship.
-- Do both sides have IDs? The collection-rule relationship is mandatory (rules
-  can't exist without collections) but rules don't even have IDs; they are
-  clearly subservient to their collection, and since the relationship is also
-  small, embedding the list is actually not a bad choice here. Anything else
-  would require rules to be individually identifiable and that feels like
-  overkill.
+- 전체적인 관계(예: `products: [ProductInput!]!`)를 updation mutation에 끼워넣는 것은 CRUD 기본 스타일입니다. 하지만 리스트가 커진다면 빠르게 비효율적으로 변하겠네요.
+- `productsToRemove: [ID!]!`) into the update mutation is more efficient since only the changed IDs need to be specified instead of the entire list, but it still keeps the actions tied together.
+- "delta" 필드(예: `productsToAdd: [ID!]!`와 `productsToRemove: [ID!]!`)를 update mutation에 끼워넣은 것은 전체 리스트 대신 변경된 ID들만 알려주면 되지만, 여전히 행위들(actions)을 함께 묶어 두므로 훨씬 더 비효율적입니다.
+- 전체적으로 이것을 개별적인 mutation으로 (`addProduct`, `removeProduct` 등) 분리하는 것은 가장 강력하고 유연할 뿐만 아니라 가장 잘 동작합니다.
 
-*Rule #15: Mutating relationships is really complicated and not easily
- summarized into a snappy rule.*
+마지막 옵션이 일반적으로 가장 안전합니다. 특히 이런 mutation이라면 어쨌든 일반적으로 뚜렷한 논리 행위(logical action)가 될 것이기 때문입니다. 여기에는 고려해야될 많은 요인이 있습니다. 
 
- If you stir all of this together, for collections we end up with the following
- list of mutations:
+- Is the relationship large or paginated? If so, embedding the entire list is definitely impractical, however either delta fields or separate mutations could still work. If the relationship is always small though (especially if it's one-to-one), embedding may be the simplest choice.
+- 그 관계가 크거나 혹은 페이지네이션되는 것인가요? 만약 그렇다면, delta 필드 또는 개별적인 mutation가 적절할 수 있기에, 전체 리스트를 끼워넣는 것은 확실히 실용적이지 않습니다. 그러나 만약 관계가 항상 작다면 (특히 이것이 일대일 관계라면), 끼워넣기는 가장 간단한 선택이 될 수 있습니다.
+
+- 그 관계가 정렬되어 있나요? product-collection 관계는 정렬됩니다. 그리고 수동적으로 재정렬하죠. 순서는 embedded 리스트 또는 개별적인 mutation에 의해 자연스럽게 정렬됩니다 (`reorderProducts` mutation을 추가하면 됩니다). 하지만 delta 필드에서는 옵션이 아닙니다.
+- 그 관계는 의무적인가요? Products와 collection은 모두 관계를 벗어나 스스로 존재할 수 있습니다. 그들 스스로 create/delete의 생애주기를 거치면서요. 만약 그 관계가 의무적이라면(예를 들어, collection 내에 product가 반드시 존재해야 하는 경우), 개별적인 mutation을 강력하게 제안할 수 있습니다. 그 행위(action)는 단지 그 관계를 수정하는 것뿐만 아니라 실제로 product를 *생성*하니까요.
+- 양쪽에서 ID를 가지나요? collection-rule의 관계는 의무적입니다 (rule은 collection 없이는 존재할 수 없기 때문입니다). 하지만, rule은 ID조차도 가지지 않습니다. rule은 명확히 collection에 포함되고 그 관계가 작기 때문에, 여기서 리스트를 끼워넣는 것(embedding)은 실제로 나쁘지 않은 선택입니다. 그 밖에 다른 선택은 rule이 개별적으로 식별될 수 있도록 요구하는 것입니다(<역주> rule마다 ID를 가지도록 요구)만 이것은 과한 것같네요.
+
+*규칙 #15: 관계를 변형시키는 것은 정말 복잡한 작업입니다. 그리고 짧고 분명한 규칙으로 요약하는 것도 쉽지 않습니다.*
+
+이 모든 것을 함께 섞는다면, collection에 대해 우리는 다음의 mutation 리스트를 작성할 수 있습니다.
+
 - create
 - delete
 - update
@@ -615,17 +538,11 @@ of factors to consider:
 - removeProducts
 - reorderProducts
 
-Products we split into their own mutations, because the relationship is large
-and ordered. Rules we left inline because the relationship is small, and rules
-are sufficiently minor to not have IDs.
+Products는 관계가 크고 순서가 있는 것이기 때문에 그들 자신의 mutation으로 분리했습니다. Rule은 관계가 작고 ID를 가지지 않아도 될 만큼 충분히 작기 때문에 인라인으로 남겨두었습니다.
 
-Finally, you may note our product mutations act on sets of products, for example
-`addProducts` and not `addProduct`. This is simply a convenience for the client,
-since the common use case when manipulating this relationship will be to add,
-remove, or reorder more than one product at a time.
+마지막으로, 우리는 product mutation들이 products 집합에 영향을 준다는 사실을 알 수 있습니다 (예: "addProduct"가 아닌 "addProducts"). 클라이언트에게도 편리합니다. 그 관계를 조작할 때, 일반적으로 사용되는 경우는 한 번에 두 개 이상의 product를 추가, 제거 또는 재정렬하는 것이기 때문입니다. 
 
-*Rule #16: When writing separate mutations for relationships, consider whether
- it would be useful for the mutations to operate on multiple elements at once.*
+*규칙 #16: 관계에 대한 개별적인 mutation을 작성할 때, 그 mutation이 여러 개의 요소를 한 번에 작업하는 데 유용한지 고려해보세요.*
 
 ### Input: Structure, Part 1
 
