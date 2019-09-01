@@ -84,15 +84,6 @@ type CollectionMembership {
 또한, 우리가 이 API를 이용해 모바일 앱의 collection 특징 같은 것을 구축하려고 한다면,
 이 스키마는 우리가 필요로 하는 모든 특징을 명확히 구현하고 있는 것도 아닙니다.
 
-Let's take a step back. A decently complex GraphQL API will consist of many
-objects, related via multiple paths and with dozens of fields. Trying to design
-something like this all at once is a recipe for confusion and mistakes. Instead,
-you should start with a higher-level view first, focusing on just the types and
-their relations without worrying about specific fields or mutations.
-Basically think of an [Entity-Relationship model](https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model)
-but with a few GraphQL-specific bits thrown in. If we shrink our naive schema
-down like that, we end up with the following:
-
 한 발짝 뒤로 가봅시다. 복잡한 graphQL API는 다양한 경로와 몇 십개의 필드를 통해 많은 객체들을 구성하게 됩니다.
 이런 API를 모두 한 번에 설계하려고 하는 것은 혼란과 실수를 야기하기 좋은 방법입니다. 
 처음부터 구체적으로 시작하기보다는 더 높은 곳에서 바라보는 것부터 시작하는 게 좋습니다. 
@@ -184,7 +175,7 @@ type AutomaticCollectionRule { }
 
 이 API 디자인은 여전히 한 가지 중요한 결함을 갖고 있습니다. 비즈니스 도메인에 대한 이해 없이는, 아마 덜 느껴질 것입니다.
 이 설계에서, 우리는  AutomaticCollections와 ManualCollections를 두 개의 다른 type으로 모델링했습니다.
-그리고 이 두 type은 각각 공통적으로 Collection interface를 상속합니다. 직관적으로 보면 말이 되는 것처럼 보이기도 합니다.
+그리고 이 두 type은 각각 공통적으로 Collection interface를 구현합니다. 직관적으로 보면 말이 되는 것처럼 보이기도 합니다.
 그들 사이에는 많은 공통의 field가 존재하지만, 여전히 그들의 관계나 동작하는 방식은 많이 다릅니다. (AutomaticCollections는 규칙을 갖고 있죠.)
 
 비즈니스 모델 관점으로부터, 이러한 차이점은 기본적으로 구현상의 디테일일 뿐입니다. collection의 정의는 제품을 그룹핑하는 것이었습니다.
@@ -218,42 +209,26 @@ collection에 대해 깊이 이해하고 있지 않더라도, 실제로 모델�
 구현과 UI는 모두 당신의 API 설계에 있어 제공과 입력을 위해 사용될 수 있지만, 
 결정의 가장 중요한 동인은 항상 비즈니스 도메인이어야 합니다.
 
-
-Even more importantly, existing REST API choices should not necessarily be
-copied. The design principles behind REST and GraphQL can lead to very different
-choices, so don't assume that what worked for your REST API is a good choice for
-GraphQL.
-
 더 중요하게는, 기존의 REST API를 복사하지 않는 것이 좋습니다. REST와 GraphQL의 설계 원칙은 다른 영역입니다. 
 그러므로 당신의 REST API에 동작하는 것이 GraphQL에서도 좋은 선택이 될 것이라 가정하시면 안됩니다.
 
-As much as possible let go of your baggage and start from scratch.
 가능한 당신의 짐을 최대한 내려놓고, 처음부터 시작하시길 바랍니다.
-
-*Rule #3: Design your API around the business domain, not the implementation,
-user-interface, or legacy APIs.*
 
 *Rule #3: 구현도 UI도 기존 API도 아닌, 비즈니스 도메인에 맞춰 API를 설계하세요.*
 
 ## Step Three: Adding Detail
 
-Now that we have a clean structure to model our types, we can add back our
-fields and start to work at that level of detail again.
+이제 우리는 type을 모델링하기에 깔끔한 구조를 갖게 되었습니다. 우리는 field를 추가할 수 있고, 다시 세부적인 수준에서 시작할 수 있습니다. 
 
-Before we start adding detail, ask yourself if it's really needed at this
-time. Just because a database column, model property, or REST attribute may
-exist, doesn't mean it automatically needs to be added to the GraphQL schema.
+세부사항을 추가하기 전에, 지금 시점에 이것을 추가하는 게 맞는지 스스로에게 물어봅시다. 데이터베이스 컬럼, 모델 속성, 또는 REST 속성이 이미 기존에 있다는 이유로 graphQL 스키마에 추가할 필요는 없습니다.
 
-Exposing a schema element (field, argument, type, etc) should be driven by an
-actual need and use case. GraphQL schemas can easily be evolved by adding
-elements, but changing or removing them are breaking changes and much more
-difficult.
+실질적인 요구와 활용 사례에 의해 스키마 요소(field, argument, type 등)를 추가하는 게 좋습니다. GraphQL 스키마는 요소를 추가함으로써 쉽게 발전될 수 있습니다. 하지만, 요소를 제거하거나 변형하는 것은 변화를 깨뜨리는 것이고, 일을 훨씬 더 어렵게 들 수 있습니다. 
 
-*Rule #4: It's easier to add fields than to remove them.*
+*규칙 #4: 필드를 제거하는 것보다 추가하는 것이 더 쉽습니다.*
 
 ### Starting point
 
-Restoring our naive fields adjusted for our new structure, we get:
+새로운 구조에 맞게 조정된 단순한 필드를 복구시켜 봅시다.
 
 ```graphql
 type Collection {
@@ -273,69 +248,55 @@ type CollectionRule {
 }
 ```
 
-Now we have a whole new host of design problems to resolve. We'll work through
-the fields in order top to bottom, fixing things as we go.
+이제 우리는 해결해야 할 완전히 새로운 설계 문제를 갖고 있습니다. 우리는 우리가 가는 대로 꼭대기부터 바닥까지 필드를 고쳐갈 것입니다. 
 
 ### IDs and the `Node` Interface
 
-The very first field in our Collection type is an ID field, which is fine and
-normal; this ID is what we'll need to use to identify our collections throughout
-the API, in particular when performing actions like modifying or deleting them.
-However there is one piece missing from this part of our design: the `Node`
-interface. This is a very commonly-used interface that already exists in most
-schemas and looks like this:
+Collection type에서 가장 첫번째 필드는 ID 필드입니다. 이 필드는 꽤 괜찮고 정상적이네요. 이 ID는 
+우리가 API에서 collection들을 식별하기 위해 사용하는 데에 필요합니다. 특히, collection들을 
+수정하거나 삭제해야할 때 도움이 될 것입니다. 그러나 우리 설계에는 어떤 한 조각이 빠져있습니다. 
+그것은 `Node`라는 인터페이스입니다. 이것은 대부분의 스키마에서 이미 존재하는, 매우 공통적으로 사용되는 인터페이스입니다.
+생긴 것은 다음과 같습니다. 
+
 ```graphql
 interface Node {
   id: ID!
 }
 ```
-It hints to the client that this object is persisted and retrievable by the
-given ID, which allows the client to accurately and efficiently manage local
-caches and other tricks. Most of your major identifiable business objects
-(e.g. products, collections, etc) should implement `Node`.
 
-The beginning of our design now just looks like:
+클라이언트에게 이 객체는 ID가 주어져야 한다는 것을 알려줍니다. 이 ID는 클라이언트가 정확하고 효율적으로 
+로컬 캐시나 다른 트릭들을 관리할 수 있도록 해줍니다. 
+대부분의 식별 가능한 비즈니스 객체(products, collections 등)는 이 `Node`를 구현해야 합니다.
+
+우리 설계의 시작은 이제 이렇게 됩니다. 
 ```graphql
 type Collection implements Node {
   id: ID!
 }
 ```
 
-*Rule #5: Major business-object types should always implement `Node`.*
+*규칙 #5: 주요한 비즈니스 객체 type은 항상 `Node`를 구현해야 합니다.*
 
 ### Rules and Subobjects
 
-We will consider the next two fields in our Collection type together: `rules`,
-and `rulesApplyDisjunctively`. The first is pretty straightforward: a list of
-rules. Do note that both the list itself and the elements of the list are marked
-as non-null: this is fine, as GraphQL does distinguish between `null` and `[]`
-and `[null]`. For manual collections, this list can be empty, but it cannot be
-null nor can it contain a null.
+우리는 collection 필드 중에서 `rules`, `rulesApplyDisjunctively`라는 두 가지 필드를 살펴볼 것입니다.
+첫번째는 rules의 리스트라는 꽤 정직한 이름입니다. 리스트 그 자체와 그 안의 요소 모두 non-null(<역주> 필드 값이 null로 저장될 수 없음)로 표시된다는 것을 알아두세요. GraphQL은 `null`과 `[]` 그리고 `[null]`을 구별하기 때문에 괜찮습니다. 
+수동적인 collection을 위해, 우리는 이 리스트를 비워둘 수 있습니다. 하지만 그것이 null이 되거나, null 값을 포함할 수는 없습니다.
+(<역주> `null`, `[null]`은 안되고, `[]`은 가능합니다.)
 
-*Protip: List-type fields are almost always non-null lists with non-null
-elements. If you want a nullable list make sure there is real semantic value in
-being able to distinguish between an empty list and a null one.*
+*Protip: List-type 필드는 거의 항상 non-null 요소를 가지는 non-null 리스트입니다. 만약 당신이 nullable한 리스트를 원한다면, 리스트에 빈 리스트와 null 리스트를 구별할 수 있도록 하는 \*'시맨틱 값'이 있어야 한다는 것을 확실히 해두세요.*
 
-The second field is a bit weird: it is a boolean field indicating whether the
-rules apply disjunctively or not. It is also non-null, but here we run into a
-problem: what value should this field take for manual collections? Making it
-either false or true feels misleading, but making the field nullable then makes
-it a kind of weird tri-state flag which is also awkward when dealing with
-automatic collections. While we're puzzling over this, there is one other thing
-that is worth mentioning: these two fields are obviously and intricately related.
-This is true semantically, and it's also hinted by the fact that we chose names
-with a shared prefix. Is there a way to indicate this relationship in the schema
-somehow?
+🧚‍♀️ <역주> 시맨틱 값(semantic value): 의미론적인 값이란, 함수나 값이 어떤 것인지 설명하지 않아도 그 이름만으로 어떤 역할, 어떤 의미를 가지는 지 알아볼 수 있는 값입니다. HTML을 예로 들면, `<p style="font-size: 32px;"> header </p>`라고 표현하는 것보다 `<header> header </header>`라고 표현하는 것이 해당 태그가 무엇인지 더 알아보기 쉬울 것입니다.
 
-As a matter of fact, we can solve all of these problems in one fell swoop by
-deviating even further from our underlying implementation and introducing a new
-GraphQL type with no direct model equivalent: `CollectionRuleSet`. This is often
-warranted when you have a set of closely-related fields whose values and
-behaviour are linked. By grouping the two fields into their own type at the API
-level we provide a clear semantic indicator and also solve all of our problems
-around nullability: for manual collections, it is the rule-set itself which is
-null. The boolean field can remain non-null. This leads us to the following
-design:
+두번째 필드는 살짝 이상합니다. 이것은 규칙이 불분명하게 적용되는지 아닌지 알려주는 boolean 타입의 필드입니다. 
+이 또한, non-null 필드지만, 여기에는 문제가 있습니다. 수동적인 collection에서는, 어떤 값이 이 필드에 들어와야 할까요?
+fales나 true로 두는 것 어떤 것도 잘못된 방법처럼 느껴집니다. 그렇다고 필드를 nullable로 만드는 것 또한, 일종의 이상한
+3개주 지역의 깃발처럼 되어(이것도 저것도 아닌 상태가 되어) 자동적인 collection을 다루기에도 어색해집니다. 우리가 이 문제를 
+해결하고 있는 동안, 언급할 만한 다른 하나의 사실이 있습니다. 이 두 필드들 사이에는 명확하고, 복잡한 관계가 있다는 것입니다.
+이것은 의미론적으로 사실이며, 우리가 공통된 접두사를 붙였다는 것에서도 알 수 있습니다. 그렇다면, 어떤 방법으로 스키마에서
+이 관계를 드러낼 수 있을까요? 
+
+사실, 우리는 기본적인 구현으로부터 멀리 벗어나, 직접적인 모델과 동등하지 않은 새로운 graphQL type을 도입함으로써 이런 문제를 단번에 해결할 수 있습니다. 그 type을 `CollectionRuleSet`이라고 합니다. 이것은 당신이 값이나 행위가 연결되어 있는, 근접한 관계에 있는 필드들의 집합을 갖고 있을 때 종종 사용됩니다. 두 필드를 API에서 우리가 만든 type으로 그룹핑함으로써, 우리는 깔끔한 시맨틱 식별자를 제공하고, 또한 우리가 nullability와 관련해서 가졌던 모든 문제를 해결할 수 있습니다. 수동적인 collection에서는, 우리는 rule-set을 그 자체로 null로 둡니다. boolean 필드는 non-null로 남을 수 있습니다. 다음처럼 설계할 수 있습니다. 
 
 ```graphql
 type Collection implements Node {
@@ -359,35 +320,24 @@ type CollectionRule {
 }
 ```
 
-*Protip: Like lists, boolean fields are almost always non-null. If you want a
-nullable boolean, make sure there is real semantic value in being able to
-distinguish between all three states (null/false/true) and that it doesn't
-indicate a bigger design flaw.*
+*Protip: list 같이, boolean 필드도 거의 항상 non-null입니다. 만약 nullable한 boolean을 원한다면, null, false, true의 세 가지 상태를 구별할 수 있는 시맨틱 값을 포함시켜야 합니다. 그리고 이런 행위가 더 큰 설계 결함을 일으키지 않는 지도 확인해야 합니다.*
 
-*Rule #6: Group closely-related fields together into subobjects.*
+*규칙 #6: 근접한 관계를 가진 필드는 하위-객체로 그룹핑하세요.*
 
 ### Lists and Pagination
 
-Next on the chopping block is our `products` field. This one might seem safe;
-after all we already "fixed" this relation back when we removed our `CollectionMembership`
-type, but in fact there's something else wrong here.
+다음은 `products` 필드를 볼 차례입니다. 보기에는 안전해 보입니다. `CollectionMembership`을 제거했을 때, 이미 이 관계를 고친 뒤지만, 여기에는 또 다른 문제가 있습니다.   
 
-The field as currently defined returns an array of products, but collections can
-easily have many tens of thousands of products, and trying to gather all of
-those into a single array would be incredibly expensive and inefficient. For
-situations like this, GraphQL provides lists pagination.
+현재 products 배열을 반환하도록 정의된 필드이지만, collection들은 몇 십, 몇 천의 products를 가질 수 있습니다.
+그리고 그 모든 것들을 하나의 배열로 모으는 것은 아주 큰 비용을 치뤄야 하며, 비효율적일 수 있습니다. 이런 상황 때문에,
+graphQL은 lists pagination이라는 것을 제공합니다. 
 
-Whenever you implement a field or relation returning multiple objects, always
-ask yourself if the field should be paginated or not. How many of this object
-can there be? What quantity is considered pathological?
+여러 객체를 반환하는 필드나 릴레이션을 구현할 때마다, 항상 스스로에게 그 필드를 페이지네이션할 수 있는지 묻길 바랍니다. 
+필드에 얼마나 많은 객체가 들어올 수 있을까요? 최대한으로 생각하는 수량은 어느 정도인가요?
 
-Paginating a field means you need to implement a pagination solution first.
-This tutorial uses [Connections](https://graphql.org/learn/pagination/#complete-connection-model)
-which is defined by the [Relay Connection spec](https://facebook.github.io/relay/graphql/connections.htm).
+필드를 페이지네이션하기 위해서는 페이지네이션 솔루션을 먼저 구현해야합니다. 이 튜토리얼은 [Connections](https://graphql.org/learn/pagination/#complete-connection-model)을 사용합니다. 이것은 [Relay Connection spec](https://facebook.github.io/relay/graphql/connections.htm)에 정의되어 있습니다. 
 
-In this case, paginating the products field in our design is as simple as
-changing its definition to `products: ProductConnection!`. Assuming you have
-connections implemented, your types would look like this:
+이 경우, 우리 설계에서 products 필드를 페이지네이션하는 것은 그것의 정의를 `products: ProductConnection!`로 바꾸는 것 만큼이나 간단합니다. 당신이 connections를 구현한다고 가정하면, type은 다음과 같아집니다.
 
 ```graphql
 type ProductConnection {
@@ -407,37 +357,22 @@ type PageInfo {
 ```
 
 
-*Rule #7: Always check whether list fields should be paginated or not.*
+*규칙 #7: 항상 list 필드가 페이지네이션될 수 있는지 아닌지 확인하세요.*
 
 ###  Strings
 
-Next up is the `title` field. This one is legitimately fine the way it is. It's
-a simple string, and it's marked non-null because all collections must have a
-title.
+다음은 `title` 필드입니다. 합리적으로 괜찮은 방법입니다. 
+간단한 문자열이고, non-null로 표시됩니다. 왜냐하면, collection들은 각각 title을 가져야하니까요.
 
-*Protip: As with booleans and lists, it's worth noting that GraphQL does
-distinguish between empty strings (`""`) and nulls (`null`), so if you need a
-nullable string make sure there is a legitimate semantic difference between
-not-present (`null`) and present-but-empty (`""`). You can often think of empty
-strings as meaning "applicable, but not populated", and null strings meaning
-"not applicable".*
+*Protip: boolean, list와 마찬가지로, graphQL은 빈 문자열과 null을 구분합니다. 그러니 nullable한 문자열을 원할 땐, 합리적으로 표현되지만 비어있는(`""`) 것과 표현되지 않는 것(`null`) 사이에 시맨틱한 차이점이 있는지 확인해보세요. 빈 문자열을 "적용 가능하지만 채워지지 않는다"는 의미로 생각할 수 있으며, null 문자열은 "적용할 수 없다"는 것으로 종종 생각할 수 있습니다.*
 
 ### IDs and Relations
 
-Now we come to the `imageId` field. This field is a classic example of what
-happens when you try and apply REST designs to GraphQL. In REST APIs it's
-pretty common to include the IDs of other objects in your response as a way to
-link together those objects, but this is a major anti-pattern in GraphQL.
-Instead of providing an ID, and forcing the client to do another round-trip to
-get any information on the object, we should just include the object directly
-into the graph - that's what GraphQL is for after all. In REST APIs this pattern
-often isn't practical, since it inflates the size of the response significantly
-when the included objects are large. However, this works fine in GraphQL because
-every field must be explicitly queried or the server won't return it.
+이제 `imageId` 필드로 왔습니다. 이 필드는 우리가 REST 설계를 GraphQL에 적용할 때 발생하는 클래식한 예시입니다.
+REST API에서는 다른 객체들을 연결하기 위한 방법으로, 당신의 response에 다른 객체의 ID를 포함하는 것은 꽤 흔한 일입니다.
+객체에 대한 다른 정보를 얻기 위해, ID를 제공하거나 클라이언트에게 (input, output을 주고 받는) 왕복하도록 강요하는 대신에, 그저 직접적으로 graph에 객체를 포함하는 것이 좋습니다. 그게 바로 GraphQL이 존재하는 목적이죠. REST API에서는 이 패턴이 종종 실용적인 것은 아닙니다. 객체의 사이즈가 클 때는 response의 크기가 상당히 증가할 수 있기 때문입니다. 그러나, GraphQL에서는 괜찮습니다. 왜냐하면, 모든 필드는 반드시 명시적으로 질의되거나, 서버가 이것을 반환하지 않을 것이기 때문입니다.
 
-As a general rule, the only ID fields in your design should be the IDs of the
-object itself. Any time you have some other ID field, it should probably be an
-object reference instead. Applying this to our schema so far, we get:
+일반적인 규칙으로서, 설계에서 ID 필드들은 오직 해당 오브젝트의 ID 필드여야합니다(다른 오브젝트의 ID필드 포함 x). 다른 ID 필드를 가질 때는, 아마도 그것은 그 객체의 레퍼런스가 되어야합니다. 이 규칙을 우리 스키마에 적용하면, 다음과 같습니다.
 
 ```graphql
 type Collection implements Node {
@@ -465,18 +400,16 @@ type CollectionRule {
 }
 ```
 
-*Rule #8: Always use object references instead of ID fields.*
+*규칙 #8: 다른 ID 필드들을 사용하기보다는, 항상 객체 레퍼런스를 사용하세요.*
 
 ### Naming and Scalars
 
-The last field in our simple `Collection` type is `bodyHtml`. To a user who is
-unfamiliar with the way that collections were implemented, it's not entirely
-obvious what this field is for; it's the body description of the specific
-collection. The first thing we can do to make this API better is just to rename
-it to `description`, which is a much clearer name.
+우리의 `Collection` type에서 마지막 필드는 `bodyHtml`입니다. 
+collections가 구현되는 방법에 친숙하지 않는 사용자에게는, 이 필드의 역할이 완전히 명확하지는 않을 것입니다.
+이것은 구체적인 collection에 대한 body description입니다. 우리가 이 API를 더 나은 것으로 만들기 위해
+첫번째로 할 수 있는 것은 이 필드의 이름을 그저 `description`으로 바꾸는 것입니다. 그게 훨씬 더 명확한 이름같습니다.
 
-*Rule #9: Choose field names based on what makes sense, not based on the
-implementation or what the field is called in legacy APIs.*
+*규칙 #9: 구현 또는 기존 API에서 그 필드가 무엇으로 불렸는지에 근거하기 보다는 좀 더 명확한 필드 이름을 선택하세요.*
 
 Next, we can make it non-nullable. As we talked about with the title field, it
 doesn't make sense to distinguish between the field being null and simply being
@@ -484,33 +417,34 @@ an empty string, so we don't expose that in the API. Even if your database
 schema does allow records to have a null value for this column, we can hide that
 at the implementation layer.
 
-Finally, we need to consider if `String` is actually the right type for this
-field. GraphQL provides a decent set of built-in scalar types (`String`, `Int`,
-`Boolean`, etc) but it also lets you define your own, and this is a prime use
-case for that feature. Most schemas define their own set of additional scalars
-depending on their use cases. These provide additional context and semantic
-value for clients. In this case, it probably makes sense to define a custom
-`HTML` scalar for use here (and potentially elsewhere) when the string in
-question must be valid HTML.
+다음으로 우리는 이것을 non-nullable로 만들 수 있습니다. title 필드에 대해서 말했던 것처럼, 
+필드가 null이 되는 것과, 단순히 빈 문자열인 것을 구분하는 것은 합당한 일이 아닙니다. 
+그래서 우리는 이것을 API에는 노출시키지 않을 것입니다. 
+데이터베이스 스키마가 컬럼에서 값이 null을 가지도록 허락한다 해도, 우리는 구현 단에서 이것을 숨길 수 있습니다. 
+
+마지막으로, 우리는 `String`이 이 필드에 실질적으로 맞는 type인지 고려해봐야 합니다. GraphQL은 꽤 괜찮은 
+내장된 스칼라 타입의 집합을 갖고 있습니다. 하지만 이것은 당신 스스로 당신의 것을 정의하도록 합니다. 그리고 그것이 이 기능을
+사용하는 주요한 활용 사례이기도 합니다. 대부분의 스키마들은 자신의 활용 사례에 스스로의 추가적인 스칼라 집합을 정의합니다. 
+이것은 클라이언트에게 시맨틱 값이나 추가적인 context를 제공합니다. 이 경우, 문제의 문자열이 유효한 HTML이어야 하는 때에 여기에(잠재적으로는 다른 곳에도) 사용자 정의 `HTML` 스칼라를 정의하는 것이 타당할 것입니다.
 
 Whenever you're adding a scalar field, it's worth checking your existing list of
 custom scalars to see if one of them would be a better fit. If you're adding a
 field and you think a new custom scalar would be appropriate, it's worth talking
 it over with your team to make sure you're capturing the right concept.
 
-*Rule #10: Use custom scalar types when you're exposing something with specific
-semantic value.*
+당신이 스칼라 필드를 추가할 때마다, 이미 존재하는 사용자 정의 스칼라 리스트를 확인하는 것이 좋습니다. 
+새로 만들기 보다는, 이미 존재하는 것 중에 더 잘 맞는 게 있을 수 있으니까요. 만약, 당신이 필드를 추가하고 있고, 
+당신이 생각하기에 새로운 사용자 정의 스칼라가 더 적당하다면, 팀과 상의하여 올바른 개념을 파악하고 있는지 확인해보는 것이 좋습니다.
+
+*규칙 #10: 무언가 구체적인 시맨틱 값을 노출할 때는 사용자 정의 스칼라 타입을 사용하세요.*
 
 ### Pagination Again
 
-That covers all of the fields in our core `Collection` type. The next object is
-`CollectionRuleSet`, which is quite simple. The only question here is whether or
-not the list of rules should be paginated. In this case the existing array
-actually makes sense; paginating the list of rules would be overkill. Most
-collections will only have a handful of rules, and there isn't a good use case
-for a collection to have a large rule set. Even a dozen rules is probably an
-indicator that you need to rethink that collection, or should just be manually
-adding products.
+지금까지 핵심적인 `Collection` type의 모든 필드를 살펴봤습니다. 다음 객체는 `CollectionRuleSet`입니다.
+꽤 간단한 객체죠. 여기서의 문제는 그저 rules의 리스트가 페이지네이션 되어야하는가 말아야하는가일 뿐입니다.
+이 경우에는, 기존의 배열이 더 타당합니다. rules 리스트를 페이지네이션하는 것은 과잉 행동이 될 수 있습니다. 
+대부분의 collection들은 적은 규칙만을 가지기 때문입니다. 그리고 collection에게는 큰 rule set을 가지는 것이 좋은 활용 사례는 아닙니다. 규칙이 십여 가지가 된다면 products를 수동적으로 추가해야하거나, 그 collection이 옳은지 재고해봐야 하는 지표가 될 것입니다.
+
 
 ### Enums
 
