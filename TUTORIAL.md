@@ -22,7 +22,7 @@ Collections는 제품을 그룹핑하는 새로운 go-to 함수입니다. 예를
 백엔드에서는, 다음과 같은 것들을 통해 앞으로의 계획이 그려지고 있습니다.
 
 - 모든 collection들은 title, description(HTML 포맷팅(<역주>html 태그 같은 것들)을 포함하는), image와 같은 간단한 속성들을 갖고 있습니다, 
-- Collection에는 두 가지 동류가 있습니다. : 당신이 원하는 것들을 포함시키기 위해 직접 리스트업하는 "수동적인" collection들, 그리고 어떤 규칙을 정해놓고, collection들이 알아서 채워질 수 있도록 하는 "자동적인" collection들이 있습니다.
+- Collection에는 두 가지 종류가 있습니다. : 당신이 원하는 것들을 포함시키기 위해 직접 리스트업하는 "수동적인" collection들, 그리고 어떤 규칙을 정해놓고, collection들이 알아서 채워질 수 있도록 하는 "자동적인" collection들이 있습니다.
 - product와 collection는 다대다 관계이므로, 중간에 'CollectionMembership'이라는 조인 테이블을 갖고 있습니다.
 - product와 같은 collections은 사이트 앞단에 그려질 수도 있고 그렇지 않을 수도 있습니다. (<역주> 사이트에 보여주는 용도로 쓰거나, 프로그래밍적 용도로 쓰거나)
 
@@ -75,7 +75,7 @@ type CollectionMembership {
 ```
 
 한 눈에 보기에도 상당히 복잡해보입니다. 4개의 객체와 하나의 인터페이스만 있을 뿐인데도요.
-또한, 우리가 이 API를 이용해 모바일 앱의 collection 특징 같은 것을 구축하려고 한다면,
+또한, 우리가 이 API를 이용해 모바일 앱의 collection 기능 같은 것을 구축하려고 한다면,
 이 스키마는 우리가 필요로 하는 모든 특징을 명확히 구현하고 있는 것도 아닙니다.
 
 그러므로 한 발짝 뒤로 가봅시다. 복잡한 graphQL API는 다양한 경로와 몇 십개의 필드를 통해 많은 객체들을 구성하게 됩니다. 이런 API를 모두 한 번에 설계하려고 하는 것은 혼란과 실수를 야기하기 좋은 방법입니다. 
@@ -518,7 +518,6 @@ products와 collections 사이의 관계에 대해, 우리가 광범위하게 �
 
 마지막 옵션이 일반적으로 가장 안전합니다. 특히 이런 mutation이라면 어쨌든 일반적으로 뚜렷한 논리 행위(logical action)가 될 것이기 때문입니다. 여기에는 고려해야될 많은 요인이 있습니다. 
 
-- Is the relationship large or paginated? If so, embedding the entire list is definitely impractical, however either delta fields or separate mutations could still work. If the relationship is always small though (especially if it's one-to-one), embedding may be the simplest choice.
 - 그 관계가 크거나 혹은 페이지네이션되는 것인가요? 만약 그렇다면, delta 필드 또는 개별적인 mutation가 적절할 수 있기에, 전체 리스트를 끼워넣는 것은 확실히 실용적이지 않습니다. 그러나 만약 관계가 항상 작다면 (특히 이것이 일대일 관계라면), 끼워넣기는 가장 간단한 선택이 될 수 있습니다.
 
 - 그 관계가 정렬되어 있나요? product-collection 관계는 정렬됩니다. 그리고 수동적으로 재정렬하죠. 순서는 embedded 리스트 또는 개별적인 mutation에 의해 자연스럽게 정렬됩니다 (`reorderProducts` mutation을 추가하면 됩니다). 하지만 delta 필드에서는 옵션이 아닙니다.
@@ -544,31 +543,21 @@ Products는 관계가 크고 순서가 있는 것이기 때문에 그들 자신�
 
 *규칙 #16: 관계에 대한 개별적인 mutation을 작성할 때, 그 mutation이 여러 개의 요소를 한 번에 작업하는 데 유용한지 고려해보세요.*
 
+
 ### Input: Structure, Part 1
 
-Now that we know which mutations we want to write, we get to figure out what
-their input structures look like. If you've been browsing any of the real
-production schemas that are publicly available, you may have noticed that many
-mutations define a single global `Input` type to hold all of their arguments:
-this pattern was a requirement of some legacy clients but is no longer needed
-for new code; we can ignore it.
+이제 우리가 작성하고 싶은 mutaion이 어떤 것인지 알 것 같습니다. 그러니 지금부터는 mutation의 input 구조가 어떻게 생겼는지 이해해봅시다. 만약 당신이 공개적으로 사용 가능한 실제 products 스키마를 본 적이 있다면, 많은 mutation이 그들의 인자를 모두 단일 전역 input type으로 정의한다는 것을 알아챌 수 있습니다: 이런 패턴은 기존 고객의 요구일 수도 있으나 새로운 코드에는 더 이상 필요하지 않습니다. 우리는 이런 패턴을 무시하도록 합시다. 
 
-For many simple mutations, an ID or a handful of IDs are all that is needed,
-making this step quite simple. Among collections, we can quickly knock out the
-following mutation arguments:
-- `delete`, `publish` and `unpublish` all simply need a single collection ID
-- `addProducts` and `removeProducts` both need the collection ID as well as a
-  list of product IDs
+많은 간단한 mutation들은 이 단계를 간단하게 만들기 위해 하나 또는 소수의 ID들이 필요합니다. collections 중에서, 우리는 빠르게 다음의 mutation 인자들을 생각해낼 수 있습니다.
+- `delete`, `publish` 그리고 `unpublish`는 모두 단일 collection ID를 필요로 합니다.
+- `addProducts`와 `removeProducts`는 모두 product IDs뿐만 아니라, collection ID 또한 필요로 합니다. 
 
-This leaves us with only three remaining "complicated" inputs to design:
+이렇게 하면, 설계를 위한 오직 3가지의 "복잡한" input만이 남습니다:
 - create
 - update
 - reorderProducts
 
-Let's start with create. A very naive input might look kind of like our original
-naive collection model when we started, but we can already do better than that.
-Based on our final collection model and the discussion of relationships above,
-we can start with something like this:
+create부터 시작해봅시다. 아주 단순한 input은 우리가 처음에 만들었던 원래의 단순한 collection 모델과 비슷해보이기도 합니다. 그러나 우리는 이미 그것보다 잘할 수 있습니다. 마지막 collection 모델과 위에서 논의했던 관계(relationships)에 근거해서 우리는 다음과 같은 것부터 시작할 수 있습니다:
 
 ```graphql
 type Mutation {
@@ -592,68 +581,29 @@ input CollectionRuleInput {
 }
 ```
 
-First a quick note on naming: you'll notice that we named all of our mutations
-in the form `collection<Action>` rather than the more naturally-English
-`<action>Collection`. Unfortunately, GraphQL does not provide a method for
-grouping or otherwise organizing mutations, so we are forced into
-alphabetization as a workaround. Putting the core type first ensures that all of
-the related mutations group together in the final list.
+먼저 네이밍을 빠르게 생각해봅시다: 우리는 모든 mutatation의 이름을 `collection<Action>`와 같은 형식으로 지었습니다. `<action>Collection`이 좀 더 영어에 친숙한 표현이긴 하지만요. 불행히도 GraphQL은 mutation을 조직화하거나 그룹핑하는 함수를 제공하지 않습니다. 따라서 이를 해결하려면 이것을 알파벳으로 문자화해야만 합니다. 핵심 type을 먼저 입력하면, 관련된 모든 mutation 그룹이 최종 리스트에 함께 표시됩니다. 
 
-*Rule #17: Prefix mutation names with the object they are mutating for
- alphabetical grouping (e.g. use `orderCancel` instead of `cancelOrder`).*
+*규칙 #17: 알파벳 그룹핑(예:  `cancelOrder` 대신 `orderCancel` 사용)을 위해 변형시키는 객체를 mutation의 접두사로 만드세요.*
+
 
 ### Input: Scalars
 
-This draft is a lot better than a completely naive approach, but it still isn't
-perfect. In particular, the `description` input field has a couple of issues. A
-non-null `HTML` field makes sense for the output of a collection's description,
-but it doesn't work as well for input for a couple of reasons. First-off, while
-`!` denotes non-nullability on output, it doesn't mean quite the same thing on
-input; instead it denotes more the concept of whether a field is "required". A
-required field is one the client must provide in order for the request to
-proceed, and this isn't true for `description`. We don't want to prevent clients
-from creating collections if they don't provide a description (or equivalently,
-we don't want to force them to provide a useless `""`), so we should make
-`description` non-required.
+이 초안은 단순한 접근법보다는 훨씬 더 낫습니다만, 여전히 완벽하지는 않습니다. 특히, `description`의 input 필드가 여전히 많은 문제를 갖고 있습니다. non-null `HTML` 필드는 collection의 description의 output에는 잘 맞지만, 몇 가지 이유로 input에는 적절하지 않습니다. 첫번째로, `!`은 output이 null이 될 수 없음을 명시하는 데 반해, input 역시 똑같이 null이 될 수 없음을 의미하지는 않습니다. 대신, 그 필드가 "필수적인(required)" 것인지에 대한 개념을 설명하는 것에 가깝습니다. 필수적인 필드는 클라이언트가 API를 요청하기 위해 반드시 제공해야 하는 필드를 의미합니다. 그리고 이것은 `description`에는 잘 맞지 않습니다. 우리는 클라이언트가 description을 제공하지 않는다고 해서 collection을 생성하지 못하도록 하는 것을 원하지 않습니다 (똑같이, 그들이 쓸 데 없는 `""`을 쓰도록 강제하고 싶지도 않습니다). 그러므로 우리는 `description`을 non-required로 만들어야 합니다.   
 
-*Rule #18: Only make input fields required if they're actually semantically
- required for the mutation to proceed.*
+*규칙 #18: 만약 mutation을 진행할 때, 의미론적으로 필요한 것이라면 input 필드를 필수적인 필드로 만드세요.*
 
-The other issue with `description` is its type; this may seem counter-intuitive
-since it is already strongly-typed (`HTML` instead of `String`) and we've been
-all about strong typing so far. But again, inputs behave a little differently.
-Validation of strong typing on input happens at the GraphQL layer before any
-"userspace" code gets run, which means that realistically clients have to deal
-with two layers of errors: GraphQL-layer validation errors, and business-layer
-validation errors (for example something like: you've reached the limit of
-collections you can create with your current storage). In order to simplify this
-process, we intentionally weakly type input fields when it might be difficult
-for the client to validate up-front. This lets the business-logic side handle
-all of the validation, and lets the client only deal with errors from one spot.
+다른 이슈는 `description`이 그 자체로 type이라는 것입니다. 이미 강한 타입이기 때문에(`String` 대신에 `HTML`을 쓰는 것처럼) 직관적이지 않아 보입니다. 그리고 우리는 지금까지 강한 타이핑을 해왔습니다. 하지만 다시, input은 조금 다르게 동작합니다. input에 대한 강한 타입의 유효성은 "사용자공간"에서 코드가 실행되기 전에 GraphQL 단에서 발생합니다. 이것은 현실적으로 클라이언트가 두 개의 차원에 대한 오류를 다뤄야 함을 의미합니다: GraphQL 차원의 유효성 오류, 그리고 비즈니스 차원의 유효성가 있습니다 오류(예: 현재 저장 공간의 한계로 생성할 수 있는 collection이 제한될 수 있습니다). 이 단계들을 간단하게 만들려면, 클라이언트가 미리 검증하기 어려울 때는 의도적으로 약한 타입의 input 필드를 선택해야 합니다. 이것은 비즈니스 로직 측에서 모든 유효성 검사를 가능케 하며, 클라이언트에게는 오직 한 공간에서의 오류만을 다룰 수 있게 합니다. 
 
-*Rule #19: Use weaker types for inputs (e.g. `String` instead of `Email`) when
- the format is unambiguous and client-side validation is complex. This lets the
- server run all non-trivial validations at once and return the errors in a
- single place in a single format, simplifying the client.*
+*규칙 #19: 형식이 명확하고, 클라이언트 측에서 유효성 검사를 하기에 복잡할 것 같다면, input에 좀 더 약한 타입(예: `Email` 대신 `String`)을 사용하세요. 그러면, 서버가 모든 non-trivial한 유효성 검사를 한 번에 할 수 있고, 클라이언트는 조금 더 간단하게 만들면서 단일 형식으로 한 장소에서 오류를 반환할 수 있습니다.*
 
-It is important to note, though, that this is not an invitation to weakly-type
-all your inputs. We still use strongly-typed enums for the `field` and
-`relation` values on our rule input, and we would still use strong typing for
-certain other inputs like `DateTime`s if we had any in this example. The key
-differentiating factors are the complexity of client-side validation and the
-ambiguity of the format. HTML is a well-defined, unambiguous specification, but
-is quite complex to validate. On the other hand, there are hundreds of ways to
-represent a date or time as a string, all of them reasonably simple, so it
-benefits from a strong scalar type to specify which format we expect.
+하지만, 약한 타입이 모든 input에 적합한 것은 아니라는 것을 알려드리고 싶습니다. 우리는 여전히 rule input에는  `field`와 `relation` 값에 대해 강한 타입의 enums를 사용하고 있습니다. 그리고 이런 사례에서라면 여전히 `DateTime`과 같은 같은 특정한 input에는 강한 타이핑을 사용하고 있을 지도 모릅니다. 뚜렷한 요인은 클라이언트 측의 유효성 검사가 복잡하다는 것과 input의 형식이 모호하다는 것입니다. HTML은 잘 정의되어 있고 명확하지만, 유효성을 검사하기에는 살짝 복잡합니다. 반면에, 날짜와 시간을 문자열로 표현하는 방법에는 수백 가지의 방법이 있습니다. 그것들은 모두 합리적으로 간단하며,어 우리가 기대하는 것이 어떤 형식인지 구체화하기 위해 강한 스칼라 타입으로부터 얻는 이점이 있습니다.  
 
-*Rule #20: Use stronger types for inputs (e.g. `DateTime` instead of `String`)
- when the format may be ambiguous and client-side validation is simple. This
- provides clarity and encourages clients to use stricter input controls (e.g. a
- date-picker widget instead of a free-text field).*
+*규칙 #20: 형식이 모호하고, 클라이언트 측에서의 유효성 검사가 간단해보일 땐, input에 더 강한 타입(예: `String` 대신에 `DateTime`)을 사용하세요. 이는 명확성을 제공하고, 클라이언트가 좀 더 엄격하게 input 값을 통제할 수 있도록 만듭니다(예: free-text 필드 애신 날짜 선택 위젯을 사용하는 등).*
+
 
 ### Input: Structure, Part 2
 
-Continuing on to the update mutation, it might look something like this:
+계속해서 update mutation을 보도록 합시다.
 
 ```graphql
 type Mutation {
@@ -663,24 +613,14 @@ type Mutation {
 }
 ```
 
-You'll note that this is very similar to our create mutation, with two
-differences: a `collectionId` argument was added, which determines which
-collection to update, and `title` is no longer required since the collection
-must already have one. Ignoring the title's required status for a moment, our
-example mutations have four duplicate arguments, and a complete collections
-model would include quite a few more.
+create mutation과 update mutation이 매우 비슷하다는 걸 눈치채셨을 겁니다. 하지만, 두 가지는 다르군요: update mutation에는 어떤 collection이 수정될 지 결정할 `collectionId`라는 인자가 추가됐고, 이미 생성된 collection은 제목을 갖고 있으므로, update에서 `title`은 더 이상 필수 인자가 아닙니다. Title의 'required' 상태를 잠시 무시하면, 이 mutation 예시는 네 개의 중복된 인자를 갖습니다. 완전한 collections 모델은 그보다 더 많이 포함할 수 있습니다.
 
-While there are some arguments for leaving these mutations as-is, we have
-decided that situations like this call for DRYing up the common portions of the
-arguments, even at the cost of requiredness. This has a couple of advantages:
-- We end up with a single input object representing the concept of a collection
-  and mirroring the single `Collection` type our schema already has.
-- Clients can share code between their create and update forms (a common
-  pattern) because they end up manipulating the same kind of input object.
-- Mutations remain slim and readable with only a couple of top-level arguments.
+이런 mutation을 그냥 놔두자는 주장도 있었습니다. 그러나, '필수'를 처리해야 하는 문제에도 불구하고, 우리는 인자의 공통된 부분을 줄이기로 했습니다. 이것은 몇 가지 이점이 있습니다:
+- 스키마가 이미 갖고 있는 단일 `Collection` type을 반영하며, collection 개념을 표현하는 '단일 input 객체'만을 다루면 됩니다.
+- 클라이언트는 (공통 패턴을 가진) create, update 폼 사이에 코드를 공유할 수 있습니다. 그들은 같은 종류의 input 객체를 다루기 때문입니다.
+- 몇 개의 최상위 인자만으로 Mutations이 깔끔해지고 읽기 쉬워집니다.
 
-The primary cost, of course, is that it's no longer clear from the schema that
-the title is required on creation. Our schema ends up looking like this:
+처리할 가장 큰 문제는 물론, collection이 생성될 때 그 제목이 필수적인지 아닌지 스키마에서는 확실하게 알 수 없다는 것이겠죠. 스키마는 결국 다음과 같아집니다.
 
 ```graphql
 type Mutation {
@@ -697,19 +637,13 @@ input CollectionInput {
 }
 ```
 
-*Rule #21: Structure mutation inputs to reduce duplication, even if this
- requires relaxing requiredness constraints on certain fields.*
+*규칙 #21: 특정 필드에서 \*완화된 '필수' 조건이 필요하다 하더라도, 중복을 줄일 수 있도록 mutation input을 짜보세요.*
+
+<sub>🧚‍♀ <역주> 완화된 필수 조건(relaxing requiredness constraints): collectionUpdate의 title처럼, `!`는 붙지 않았지만 반드시 있을 것이라고 기대되는 필드를 말하는 것 같습니다.</sub>
 
 ### Output
 
-The final design question we need to deal with is the return value of our
-mutations. Typically mutations can succeed or fail, and while GraphQL does
-include explicit support for query-level errors, these are not ideal for
-business-level mutation failures. Instead, we reserve these top-level errors for
-failures of the client (e.g. requesting a non-existant field) rather than of the
-user. As such, each mutation should define a "payload" type which includes a
-user-errors field in addition to any other values that might be useful. For
-create, that might look like this:
+우리가 다룰 마지막 설계 문제는 mutatoin의 반환 값입니다. mutatoin은 성공하거나 실패할 수 있습니다. GraphQL은 쿼리 수준의 오류에 대해서는 확실하게 지원해주지만, 비즈니스 수준에서 mutation이 실패하는 것에 대해서는 그렇지 않습니다. 그러니 사용자보다는 클라이언트 측의 실수(예: 존재하지 않는 필드를 요청)에 대한 최상위 수준의 오류에 대비해야 합니다. 마찬가지로, 각 mutation은 유용한 다른 값들과 함께 사용자 오류에 대응하는 필드를 포함하는 "payload" type을 정의해야 합니다. Create라면 다음과 같이 표현할 수 있습니다:
 
 ```graphql
 type CollectionCreatePayload {
@@ -725,19 +659,13 @@ type UserError {
 }
 ```
 
-Here, a successful mutation would return an empty list for `userErrors` and
-would return the newly-created collection for the `collection` field. An
-unsuccessful mutation would return one or more `UserError` objects, and `null`
-for the collection.
+mutatoin이 성공한다면 `userErrors`에서는 빈 리스트를, `collection` 필드에서는 새롭게 생성된 collection을 반환할 것입니다. mutation이 성공하지 않는다면 하나 이상의 `userErrors` 객체를, collection 필드에는 `null`을 반환할 것입니다.
 
-*Rule #22: Mutations should provide user/business-level errors via a
- `userErrors` field on the mutation payload. The top-level query errors entry is
- reserved for client and server-level errors.*
+*규칙 #22: mutation은 mutation payload에서 `userErrors` 필드를 통해 사용자/비즈니스 수준의 오류를 처리해야 합니다. 최상위 수준의 쿼리 오류 엔트리(The top-level query errors entry)는 클라이언트와 서버 수준의 오류에 대비해야 합니다.*
 
-In many implementations, much of this structure is provided automatically, and
-all you will have to define is the `collection` return field.
+많은 구현에서, 이런 구조는 대부분 자동으로 제공됩니다. 당신은 그저 `collection`의 반환 필드만 정의하면 됩니다.
 
-For the update mutation, we follow exactly the same pattern:
+update mutation에서는, 우리는 정확히 그와 똑같은 패턴을 따를 수 있습니다.
 
 ```graphql
 type CollectionUpdatePayload {
@@ -746,12 +674,9 @@ type CollectionUpdatePayload {
 }
 ```
 
-It's worth noting that `collection` is still nullable even here, since if the
-provided ID doesn't represent a valid collection, there is no collection to
-return.
+`collection`이 null이 가능하다는 것에 주목해주세요. 이는 제공된 ID가 유효한 collection을 나타내지 않는다면, 반환할 collection이 없기 때문입니다.
 
-*Rule #23: Most payload fields for a mutation should be nullable, unless there
- is really a value to return in every possible error case.*
+*규칙 #23: 발생 가능한 모든 오류 케이스에서, 필드 값이 반드시 반환될 것이라는 확신이 들지 않는다면 mutation에 대한 대부분의 payload 필드는 null이 가능하도록 하는 게 좋습니다.*
 
 ## TLDR: The rules
 
