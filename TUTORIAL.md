@@ -680,34 +680,33 @@ type CollectionUpdatePayload {
 
 ## TLDR: The rules
 
-- Rule #1: Always start with a high-level view of the objects and their relationships before you deal with specific fields.
-- Rule #2: Never expose implementation details in your API design.
-- Rule #3: Design your API around the business domain, not the implementation, user-interface, or legacy APIs.
-- Rule #4: It’s easier to add fields than to remove them.
-- Rule #5: Major business-object types should always implement Node.
-- Rule #6: Group closely-related fields together into subobjects.
-- Rule #7: Always check whether list fields should be paginated or not.
-- Rule #8: Always use object references instead of ID fields.
-- Rule #9: Choose field names based on what makes sense, not based on the implementation or what the field is called in legacy APIs.
-- Rule #10: Use custom scalar types when you’re exposing something with specific semantic value.
-- Rule #11: Use enums for fields which can only take a specific set of values.
-- Rule #12: The API should provide business logic, not just data. Complex calculations should be done on the server, in one place, not on the client, in many places.
-- Rule #13: Provide the raw data too, even when there’s business logic around it.
-- Rule #14: Write separate mutations for separate logical actions on a resource.
-- Rule #15: Mutating relationships is really complicated and not easily summarized into a snappy rule.
-- Rule #16: When writing separate mutations for relationships, consider whether it would be useful for the mutations to operate on multiple elements at once.
-- Rule #17: Prefix mutation names with the object they are mutating for
- alphabetical grouping (e.g. use `orderCancel` instead of `cancelOrder`).
-- Rule #18: Only make input fields required if they're actually semantically required for the mutation to proceed.
-- Rule #19: Use weaker types for inputs (e.g. String instead of Email) when the format is unambiguous and client-side validation is complex. This lets the server run all non-trivial validations at once and return the errors in a single place in a single format, simplifying the client.
-- Rule #20: Use stronger types for inputs (e.g. DateTime instead of String) when the format may be ambiguous and client-side validation is simple. This provides clarity and encourages clients to use stricter input controls (e.g. a date-picker widget instead of a free-text field).
-- Rule #21: Structure mutation inputs to reduce duplication, even if this requires relaxing requiredness constraints on certain fields.
-- Rule #22: Mutations should provide user/business-level errors via a userErrors field on the mutation payload. The top-level query errors entry is reserved for client and server-level errors.
-- Rule #23: Most payload fields for a mutation should be nullable, unless there is really a value to return in every possible error case.
+- *규칙 #1: 구체적인 필드를 다루기 전에, 항상 객체들과 그 사이의 relation을 높은 수준에서 바라보는 것부터 시작하세요.*
+- *규칙 #2: API를 설계할 때, 구현상의 디테일은 노출시키지 마세요.*
+- *규칙 #3: 구현도 UI도 기존 API도 아닌, 비즈니스 도메인에 맞춰 API를 설계하세요.*
+- *규칙 #4: 필드를 제거하는 것보다 추가하는 것이 더 쉽습니다.*
+- *규칙 #5: 주요한 비즈니스 객체 type은 항상 `Node`를 구현해야 합니다.*
+- *규칙 #6: 근접한 관계를 가진 필드는 하위-객체로 그룹핑하세요.*
+- *규칙 #7: 항상 list 필드가 페이지네이션될 수 있는지 아닌지 확인하세요.*
+- *규칙 #8: 다른 ID 필드들을 사용하기보다는, 항상 객체 레퍼런스를 사용하세요.*
+- *규칙 #9: 구현 또는 기존 API에서 그 필드가 무엇으로 불렸는지에 근거하기 보다는 좀 더 명확한 필드 이름을 선택하세요.*
+- *규칙 #10: 무언가 구체적인 시맨틱 값을 노출할 때는 사용자 정의 스칼라 타입을 사용하세요.*
+- *규칙 #11: 오직 특정한 값의 집합만을 취하는 필드에는 enum을 사용하세요.*
+- *규칙 #12: API는 데이터가 아닌 비즈니스 로직을 제공해야 합니다. 복잡한 계산은 클라이언트 여러 곳에서가 아닌, 서버 한 곳에서 처리해야 합니다.*
+- *규칙 #13: 비즈니스 로직이 있을 지라도, raw data(원시 데이터)도 함께 제공하세요.*
+- *규칙 #14: 리소스 각각의 논리적 행위(action)에 맞는 각각의 mutation을 써보세요.*
+- *규칙 #15: 관계를 변형시키는 것은 정말 복잡한 작업입니다. 그리고 짧고 분명한 규칙으로 요약하는 것도 쉽지 않습니다.*
+- *규칙 #16: 관계에 대한 개별적인 mutation을 작성할 때, 그 mutation이 여러 개의 요소를 한 번에 작업하는 데 유용한지 고려해보세요.*
+- *규칙 #17: 알파벳 그룹핑(예:  `cancelOrder` 대신 `orderCancel` 사용)을 위해 변형시키는 객체를 mutation의 접두사로 만드세요.*
+- *규칙 #18: 만약 mutation을 진행할 때, 의미론적으로 필요한 것이라면 input 필드를 필수적인 필드로 만드세요.*
+- *규칙 #19: 형식이 명확하고, 클라이언트 측에서 유효성 검사를 하기에 복잡할 것 같다면, input에 좀 더 약한 타입(예: `Email` 대신 `String`)을 사용하세요. 그러면, 서버가 모든 non-trivial한 유효성 검사를 한 번에 할 수 있고, 클라이언트는 조금 더 간단하게 만들면서 단일 형식으로 한 장소에서 오류를 반환할 수 있습니다.*
+- *규칙 #20: 형식이 모호하고, 클라이언트 측에서의 유효성 검사가 간단해보일 땐, input에 더 강한 타입(예: `String` 대신에 `DateTime`)을 사용하세요. 이는 명확성을 제공하고, 클라이언트가 좀 더 엄격하게 input 값을 통제할 수 있도록 만듭니다(예: free-text 필드 애신 날짜 선택 위젯을 사용하는 등).*
+- *규칙 #21: 특정 필드에서 \*완화된 '필수' 조건이 필요하다 하더라도, 중복을 줄일 수 있도록 mutation input을 짜보세요.*
+- *규칙 #22: mutation은 mutation payload에서 `userErrors` 필드를 통해 사용자/비즈니스 수준의 오류를 처리해야 합니다. 최상위 수준의 쿼리 오류 엔트리(The top-level query errors entry)는 클라이언트와 서버 수준의 오류에 대비해야 합니다.*
+- *규칙 #23: 발생 가능한 모든 오류 케이스에서, 필드 값이 반드시 반환될 것이라는 확신이 들지 않는다면 mutation에 대한 대부분의 payload 필드는 null이 가능하도록 하는 게 좋습니다.*
+
 
 ## Conclusion
 
-Thank you for reading our tutorial! Hopefully by this point you have a solid
-idea of how to design a good GraphQL API.
+튜토리얼을 읽어주셔서 감사합니다. 이 튜토리얼을 통해 당신이 어떻게 하면 좋은 GraphQL API를 설계할 지 명확한 아이디어가 생겼길 희망합니다. 
 
-Once you've designed an API you're happy with, it's time to implement it!
+API를 디자인 해봤다면, 이제는 그것을 구현해보세요!
