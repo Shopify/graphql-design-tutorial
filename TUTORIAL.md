@@ -1,36 +1,57 @@
 # Tutorial: Designing a GraphQL API
 
-처음 이 튜토리얼은 [Shopify](https://www.shopify.ca/) 내부에서 쓰기 위해 만들어졌습니다. 그러나 이 튜토리얼이 다른 사람이 graphQL API를 만드는 데 도움을 줄 것이라 생각했기 때문에 우리는 이것을 공개하기로 했습니다.
+This tutorial was created by [Shopify](https://www.shopify.ca/) for internal
+purposes. We've created a public version of it since we think it's useful to
+anyone creating a GraphQL API.
 
-거의 3년이 넘는 시간 동안 만들어진 Shopify의 스키마들로부터 배운 것들을 바탕으로 만들었습니다. 이 튜토리얼은 그동안 많이 발전해왔고, 앞으로도 계속해서 바뀔 예정입니다. 정해진 것은 없습니다.
+It's based on lessons learned from creating and evolving production schemas at
+Shopify over almost 3 years. The tutorial has evolved and will continue to
+change in the future so nothing is set in stone.
 
-우리는 스키마 디자인 가이드가 대부분의 경우에 유용할 것이라고 생각합니다. 어쩌면 여러분에게는 맞지 않을 수도 있습니다. 대부분의 규칙이 항상 100% 적용되는 것은 아니기 때문에, Shopify 내부에서도 여전히 그 문제에 대한 답을 찾고 있고, 여러 예외 사항도 존재합니다. 그러니 여러분에게 맞는 것을 차용하시길 바랍니다.
-
+We believe these design guidelines work in most cases. They may not all work
+for you. Even within the company we still question them and have exceptions
+since most rules can't apply 100% of the time. So don't just blindly copy and
+implement all of them. Pick and choose which ones make sense for you and your
+use cases.
+ 
 ## Intro
 
-환영합니다! 이 문서는 여러분에게 새로운 graphQL을 (또는 이미 존재하는 graphQL API에 새 API를) 디자인하는 방법을 차근차근 알려줄 겁니다. API 디자인은 반복과 실험, 그리고 여러분의 비즈니스 도메인에 대한 이해가 필요한 어려운 일이지만요. 
+Welcome! This document will walk you through designing a new GraphQL API (or a
+new piece of an existing GraphQL API). API design is a challenging
+task that strongly rewards iteration, experimentation, and a thorough
+understanding of your business domain.
 
 ## Step Zero: Background
 
-여러분이 e-commerce 회사에서 일하고 있다고 상상해보시기 바랍니다. 여러분은 기존 graphQL API를 갖고 있습니다. 이 API는 제품들에 대한 정보를 외부에 노출하고 있지만, 정보가 그렇게 많은 건 아닙니다. 여러분의 팀은 백엔드에서 "collections"를 구현하는 프로젝트를 방금 끝냈고 기존 API에 그 collections를 사용하길 원합니다.
+For the purposes of this tutorial, imagine you work at an e-commerce company.
+You have an existing GraphQL API exposing information about your products, but
+very little else. However, your team just finished a project implementing
+"collections" in the back-end and wants to expose collections over the API as
+well.
 
-Collection은 제품을 그룹핑하는 새로운 go-to 함수입니다. 예를 들어, 여러분이 티셔츠 collection을 갖고 있다고 해봅시다. Collection은 여러분의 웹사이트를 볼 때, 화면에 띄워주는 용도로 사용될 수 있습니다. 또한, 프로그래밍 업무를 위해서도 사용될 수 있죠. (예를 들면, 특정 collection에 대해서만 할인을 적용하고 싶을 때 사용할 수 있겠네요.)
+Collections are the new go-to method for grouping products; for example, you
+might have a collection of all of your t-shirts. Collections can be used for
+display purposes when browsing your website, and also for programmatic tasks
+(e.g. you may want to make a discount only apply to products in a certain
+collection).
 
+On the back-end, your new feature has been implemented as follows:
+- All collections have some simple attributes like a title, a description body
+  (which may include HTML formatting), and an image.
+- You have two specific kinds of collections: "manual" collections where you
+  list the products you want them to include, and "automatic" collections where
+  you specify some rules and let the collection populate itself.
+- Since the product-to-collection relationship is many-to-many, you've got a
+  join table in the middle called `CollectionMembership`.
+- Collections, like products before them, can be either published (visible on
+  the storefront) or not.
 
-백엔드에서는, 다음과 같은 것들을 통해 일을 진행할 수 있습니다.
+With this background, you're ready to start thinking about your API design.
 
-- 모든 collection들은 title, description(HTML 포맷팅(:html 태그 같은 것들)을 포함하는), image와 같은 간단한 속성들을 갖고 있습니다, 
-- Collection에는 두 가지 종류가 있습니다. : 여러분이 원하는 것들을 포함시키기 위해 직접 리스트업하는 "수동적인" collection들, 그리고 어떤 규칙을 정해놓고 collection들이 알아서 채워질 수 있도록 하는 "자동적인" collection들이 있습니다.
-- product와 collection는 다대다 관계이므로, 중간에 'CollectionMembership'이라는 조인 테이블을 갖고 있습니다.
-- product와 같은 collections은 사이트 앞단에 보일 수도 있고 그렇지 않을 수도 있습니다.
+## Step One: A Bird's-Eye View
 
-이러한 배경을 가지고, 어떻게 API를 설계할 수 있을 지 생각해보기로 합시다.
-
-## Step One: A Bird's-Eye View 
-
-단순한 방법으로 만든 스키마는 다음과 같이 구성할 수 있습니다. 
-(`Product`같이 이미 존재하는 타입들은 모두 생략합니다.)
-
+A naive version of the schema might look something like this (leaving out all
+the pre-existing types like `Product`):
 ```graphql
 interface Collection {
   id: ID!
@@ -70,16 +91,19 @@ type CollectionMembership {
 }
 ```
 
-한 눈에 보기에도 상당히 복잡해보입니다. 4개의 객체와 하나의 인터페이스만 있을 뿐인데도요. 또한, 우리가 이 API를 이용해 모바일 앱의 collection 기능 같은 것을 구축하려고 한다면, 이 스키마는 우리가 필요로 하는 모든 특징을 명확히 구현하고 있는 것도 아닙니다.
+This is already decently complicated at a glance, even though it's only four
+objects and an interface. It also clearly doesn't implement all of the features
+that we would need if we're going to be using this API to build out e.g. our
+mobile app's collection feature.
 
-그러므로 한 발짝 뒤로 가봅시다. 복잡한 graphQL API는 다양한 경로와 몇 십개의 필드를 통해 많은 객체들을 구성하게 됩니다. 이런 API를 모두 한 번에 설계하려고 하는 것은 혼란과 실수를 야기하기 좋은 방법입니다. 
-
-처음부터 구체적으로 시작하기보다는 더 높은 곳에서 바라보는 것부터 시작하는 게 좋습니다. 
-구체적인 field나 mutation들은 걱정하지 말고, 일단 type과 그들의 relation에만 집중해보세요.
-
-하지만, 'with a few GraphQL-specific bits thrown in'(<옮긴이> 번역 가능한 분, 부탁드립니다!)하는 경우, 기본적으로 ERD([Entity-Relationship model](https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model))에 대해 생각해봅시다.
-
-만약 위의 단순한 스키마를 더 간단하게 만들고 싶다면, 다음과 같은 방법을 시도해봅시다.
+Let's take a step back. A decently complex GraphQL API will consist of many
+objects, related via multiple paths and with dozens of fields. Trying to design
+something like this all at once is a recipe for confusion and mistakes. Instead,
+you should start with a higher-level view first, focusing on just the types and
+their relations without worrying about specific fields or mutations.
+Basically think of an [Entity-Relationship model](https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model)
+but with a few GraphQL-specific bits thrown in. If we shrink our naive schema
+down like that, we end up with the following:
 
 ```graphql
 interface Collection {
@@ -106,30 +130,41 @@ type CollectionMembership {
 }
 ```
 
-더 간단한 스키마를 얻기 위해, 모든 스칼라 field와 field 이름, nullable한 정보는 뺐습니다. 남겨진 것들은 graphQL과 여전히 비슷하지만, 더 높은 수준(나무가 아닌 숲을 보는 관점으로)의 type과 그 relation에 집중할 수 있게 합니다. 
+To get this simplified representation, I took out all scalar fields, all field
+names, and all nullability information. What you're left with still looks kind
+of like GraphQL but lets you focus on higher level of the types and their
+relationships.
 
-*규칙 #1: 구체적인 필드를 다루기 전에, 항상 객체들과 그 사이의 relation을 높은 수준에서 바라보는 것부터 시작하세요.*
+*Rule #1: Always start with a high-level view of the objects and their
+relationships before you deal with specific fields.*
 
 ## Step Two: A Clean Slate
 
-API를 다루기 좀 더 간단하게 만들었습니다. 이제 이 설계에 있는 큰 결함을 해결할 수 있습니다. 
+Now that we have something simple to work with, we can address the major flaws
+with this design.
 
-이전에 말씀드린 것처럼, 우리가 만든 구현은 '수동적인' 또는 '자동적인' collection들을 정의하고 있습니다. 단순한 API 디자인은 우리의 구현에 대해서는 명확히 짜여졌습니다만, 이건 잘못된 방법입니다. 
+As previously mentioned, our implementation defines the existence of manual and
+automatic collections, as well as the use of a collector join table. Our naive
+API design was clearly structured around our implementation, but this was a
+mistake.
 
-이 접근 방법의 가장 근본적인 문제는, API는 '구현과는 다른 목적을 위해 동작하며, 빈번하게 다른 추상화 수준에서 동작한다'는 것입니다. 이 경우, 우리의 구현은 많은 다른 프론트 단에서 실수를 유발하도록 할 수 있습니다.
+The root problem with this approach is that an API operates for a different
+purpose than an implementation, and frequently at a different level of
+abstraction. In this case, our implementation has led us astray on a number of
+different fronts.
 
 ### Representing `CollectionMembership`s
 
-가장 눈에 띄는 명확한 사실은 스키마 안에 `CollectionMembership` type이 포함되어 있다는 것입니다. collection memberships table은 product와 collection들 간의 다대다 관계를 표현하기 위해 사용됩니다.
+The one that may have stood out to you already, and is hopefully fairly obvious,
+is the inclusion of the `CollectionMembership` type in the schema. The collection memberships table is
+used to represent the many-to-many relationship between products and collections.
+Now read that last sentence again: the relationship is *between products and
+collections*; from a semantic, business domain perspective, collection memberships have
+nothing to do with anything. They are an implementation detail.
 
-자, 마지막 문장을 다시 읽어봅시다. *product와 collection들 간의* 관계입니다. 
-비즈니스 관점에서는 collection membership 그 자체가 하는 것이 아무 것도 없습니다. 
-그것은 그저 구현의 세부사항일 뿐입니다.
-
-이것은 collection membership이 우리 API에 포함시킬 필요가 없다는 것을 의미합니다. 
-우리 API는 실질적인 비즈니스 도메인 relation만을 제품 스키마에 직접적으로 노출시키길 원합니다. 
-
-우리가 collection membership을 뺀다면, 높은 수준에서의 설계는 다음과 같아집니다.
+This means that they don't belong in our API. Instead, our API should expose the
+actual business domain relationship to products directly. If we take out
+collection memberships, the resulting high-level design now looks like:
 
 ```graphql
 interface Collection {
@@ -151,19 +186,29 @@ type ManualCollection implements Collection {
 type AutomaticCollectionRule { }
 ```
 
-훨씬 낫네요.
+This is much better.
 
-*규칙 #2: API를 설계할 때, 구현상의 디테일은 노출시키지 마세요.*
+*Rule #2: Never expose implementation details in your API design.*
 
 ### Representing Collections
 
-이 API 디자인은 여전히 한 가지 중요한 결함을 갖고 있습니다. 비즈니스 도메인에 대한 이해 없다면, 잘 느껴지지 않을 것입니다.
+This API design still has one major flaw, though it's one that's probably much
+less obvious without a really thorough understanding of the business domain. In
+our existing design, we model AutomaticCollections and ManualCollections as two
+different types, each implementing a common Collection interface. Intuitively
+this makes a fair bit of sense: they have a lot of common fields, but are
+still distinctly different in their relationships (AutomaticCollections have
+rules) and some of their behaviour.
 
-이 설계에서, 우리는 AutomaticCollections와 ManualCollections를 두 개의 다른 type으로 모델링했습니다. 그리고 이 두 type은 각각 공통적으로 Collection interface를 구현합니다. 직관적으로 보면 타당해 보입니다. 그들 사이에는 많은 공통 field가 존재하지만, 여전히 그들의 관계나 동작 방식은 많이 다릅니다. (AutomaticCollections는 규칙을 갖고 있죠.)
-
-비즈니스 모델 관점으로부터, 이러한 차이점은 기본적으로 구현상의 디테일일 뿐입니다. collection의 정의는 제품을 그룹핑하는 것입니다. 두번째는 이것이 제품들을 선택하는 함수(자동 혹은 수동적으로)라는 것입니다. 우리는 제품을 선택하는 세번째 함수를 허용하거나, 함수를 섞도록 (수동적으로 제품을 추가하는 방법과 어떤 규칙들을 섞도록) 어느 시점에서 구현을 확장할 수 있습니다.
-
-그리고 그것들을 여전히 collections로 정의할 수 있습니다. 그렇다면, 여러분은 왜 그 함수들을 지금 당장 섞지 않냐고 말할 수도 있을 것입니다. 만약 그렇게 한다면, API의 모양은 다음과 같아집니다.
+But from a business model perspective, these differences are also basically an
+implementation detail. The defining behaviour of a collection is that it groups
+products; the method of choosing those products is secondary. We could expand
+our implementation at some point to permit some third method of choosing
+products (machine learning?) or to permit mixing methods (some rules and some
+manually added products) and *they would still just be collections*. You could
+even argue that the fact we don't permit mixing right now is an implementation
+failure. All of this to say is that the shape of our API should really look more
+like this:
 
 ```graphql
 type Collection {
@@ -175,38 +220,57 @@ type Collection {
 type CollectionRule { }
 ```
 
-정말 멋져요! 이 시점에서 여러분이 걱정할 수도 있는 것은, 우리가 ManualCollections도 
-규칙을 갖고 있는 것처럼 만들었다는 것이겠네요. 하지만, 이 relation은 리스트라는 것을 기억하세요. 
-
-우리의 새 API 설계에서 "ManualCollections"는 단순히 비어있는 규칙 리스트를 가진 collection일 뿐입니다.
+That's really nice. The immediate concern you may have at this point is that
+we're now pretending ManualCollections have rules, but remember that this
+relationship is a list. In our new API design, a "ManualCollection" is just a
+Collection whose list of rules is empty.
 
 ### Conclusion
 
-추상화 단계에서 가장 최고의 API 설계를 선택하려면, 모델링하고 있는 도메인에 대해 깊게 이해하고 있어야 합니다. 튜토리얼 환경에서는 구체적인 주제에 대한 깊은 이해를 제공하기는 힘듭니다. 하지만, collection 디자인은 추론이 가능할 정도로 충분히 간단합니다.
+Choosing the best API design at this level of abstraction necessarily requires
+you to have a very deep understanding of the problem domain you're modeling.
+It's hard in a tutorial setting to provide that depth of context for a specific
+topic, but hopefully the collection design is simple enough that the reasoning
+still makes sense. Even if you don't have this depth of understanding
+specifically for collections, you still absolutely need it for whatever domain
+you're actually modeling. It is critically important when designing your API
+that you ask yourself these tough questions, and don't just blindly follow the
+implementation.
 
-collection에 대해 깊이 이해하고 있지 않더라도, 실제로 모델링하고 있는 비즈니스 영역에 대해서는 깊은 이해가 필요합니다. 여러분의 API를 설계할 때, 이런 어려운 질문을 스스로 던져보고 맹목적으로 구현하지 않는 것은 매우 중요한 일입니다.
+On a closely related note, a good API does not model the user interface either.
+The implementation and the UI can both be used for inspiration and input into
+your API design, but the final driver of your decisions must always be the
+business domain.
 
-관련 레퍼런스 중에서, 좋은 API는 사용자 인터페이스를 모델링하지 않는다고 합니다. 구현과 UI는 모두 여러분의 API 설계에 있어 제공과 입력을 위해 사용될 수 있지만, 설계의 가장 중요한 동인은 항상 비즈니스 도메인이어야 합니다.
+Even more importantly, existing REST API choices should not necessarily be
+copied. The design principles behind REST and GraphQL can lead to very different
+choices, so don't assume that what worked for your REST API is a good choice for
+GraphQL.
 
-더 중요하게는, 기존의 REST API를 복사하지 않는 것이 좋습니다. REST와 GraphQL의 설계 원칙은 다른 영역입니다. 그러므로 여러분의 REST API에 동작하는 것이 GraphQL에서도 좋은 선택이 될 것이라 가정하시면 안됩니다.
+As much as possible let go of your baggage and start from scratch.
 
-가능한 여러분의 짐을 최대한 내려놓고, 처음부터 시작하시길 바랍니다.
-
-*Rule #3: 구현도 UI도 기존 API도 아닌, 비즈니스 도메인에 맞춰 API를 설계하세요.*
+*Rule #3: Design your API around the business domain, not the implementation,
+user-interface, or legacy APIs.*
 
 ## Step Three: Adding Detail
 
-이제 우리는 type을 모델링하기에 깔끔한 구조를 갖게 되었습니다. 우리는 field를 추가할 수 있고, 다시 세부적인 수준에서 시작할 수 있습니다. 
+Now that we have a clean structure to model our types, we can add back our
+fields and start to work at that level of detail again.
 
-세부사항을 추가하기 전에, 지금 시점에 이것을 추가하는 게 맞는지 스스로에게 물어봅시다. 데이터베이스 컬럼, 모델 속성, 또는 REST 속성이 이미 기존에 있다는 이유로 graphQL 스키마에 추가할 필요는 없습니다.
+Before we start adding detail, ask yourself if it's really needed at this
+time. Just because a database column, model property, or REST attribute may
+exist, doesn't mean it automatically needs to be added to the GraphQL schema.
 
-실질적인 요구와 활용 사례에 고려해 스키마 요소(field, argument, type 등)를 추가하는 게 좋습니다. GraphQL 스키마는 요소를 추가함으로써 쉽게 발전할 수 있습니다. 하지만, 요소를 제거하거나 변형하는 것은 변화를 깨뜨리는 것이고, 일을 훨씬 더 어렵게 만들 수 있습니다. 
+Exposing a schema element (field, argument, type, etc) should be driven by an
+actual need and use case. GraphQL schemas can easily be evolved by adding
+elements, but changing or removing them are breaking changes and much more
+difficult.
 
-*규칙 #4: 필드를 제거하는 것보다 추가하는 것이 더 쉽습니다.*
+*Rule #4: It's easier to add fields than to remove them.*
 
 ### Starting point
 
-새로운 구조에 맞게, 조정된 단순한 필드를 되돌려 봅시다.
+Restoring our naive fields adjusted for our new structure, we get:
 
 ```graphql
 type Collection {
@@ -226,44 +290,69 @@ type CollectionRule {
 }
 ```
 
-이제 우리는 완전히 다른 설계 문제를 갖게 되었습니다. 우리는 위에서 아래까지 순서대로 필드를 고쳐갈 것입니다. 
+Now we have a whole new host of design problems to resolve. We'll work through
+the fields in order top to bottom, fixing things as we go.
 
 ### IDs and the `Node` Interface
 
-Collection type에서 가장 첫번째 필드는 ID 필드입니다. 이 필드는 꽤 정상적입니다. 이 ID는 우리가 API에서 collection들을 식별하기 위해 사용하는 데에 필요합니다. 특히, collection들을 수정하거나 삭제해야할 때 도움이 될 것입니다. 그러나 우리 설계에는 어떤 한 부분이 빠져있습니다. 그것은 `Node`라는 인터페이스입니다. 이것은 대부분의 스키마에서 이미 존재하는, 매우 공통적으로 사용되는 인터페이스입니다. 생긴 것은 다음과 같습니다. 
-
+The very first field in our Collection type is an ID field, which is fine and
+normal; this ID is what we'll need to use to identify our collections throughout
+the API, in particular when performing actions like modifying or deleting them.
+However there is one piece missing from this part of our design: the `Node`
+interface. This is a very commonly-used interface that already exists in most
+schemas and looks like this:
 ```graphql
 interface Node {
   id: ID!
 }
 ```
+It hints to the client that this object is persisted and retrievable by the
+given ID, which allows the client to accurately and efficiently manage local
+caches and other tricks. Most of your major identifiable business objects
+(e.g. products, collections, etc) should implement `Node`.
 
-클라이언트에게 이 객체는 ID가 주어져야 한다는 것을 알려줍니다. 이 ID는 클라이언트가 정확하고 효율적으로 로컬 캐시나 다른 트릭들을 관리할 수 있도록 해줍니다. 대부분의 식별 가능한 비즈니스 객체(products, collections 등)는 이 `Node`를 구현해야 합니다.
-
-우리 설계의 시작은 이제 이렇게 됩니다. 
-
+The beginning of our design now just looks like:
 ```graphql
 type Collection implements Node {
   id: ID!
 }
 ```
 
-*규칙 #5: 주요한 비즈니스 객체 type은 항상 `Node`를 구현해야 합니다.*
+*Rule #5: Major business-object types should always implement `Node`.*
 
 ### Rules and Subobjects
 
-우리는 collection 필드 중에서 `rules`, `rulesApplyDisjunctively`라는 두 가지 필드를 살펴볼 것입니다. 첫번째는 rules의 리스트라는 꽤 정직한 이름입니다. 리스트 그 자체와 그 안의 요소 모두 non-null로 표시된다는 것을 알아두세요. GraphQL은 `null`과 `[]` 그리고 `[null]`을 구별하기 때문에 괜찮습니다. 
-수동적인 collection을 위해, 우리는 이 리스트를 비워둘 수 있습니다. 하지만 그것이 null이 되거나, null 값을 포함할 수는 없습니다. (<옮긴이> `null`, `[null]`은 안되고, `[]`은 가능합니다.)
+We will consider the next two fields in our Collection type together: `rules`,
+and `rulesApplyDisjunctively`. The first is pretty straightforward: a list of
+rules. Do note that both the list itself and the elements of the list are marked
+as non-null: this is fine, as GraphQL does distinguish between `null` and `[]`
+and `[null]`. For manual collections, this list can be empty, but it cannot be
+null nor can it contain a null.
 
-*Protip: List-type 필드는 거의 항상 non-null 요소를 가지는 non-null 리스트입니다. 만약 여러분이 nullable한 리스트를 원한다면, 리스트에 빈 리스트와 null 리스트를 구별할 수 있도록 하는 \*'시맨틱 값'이 있어야 한다는 것을 확실히 해두세요.*
+*Protip: List-type fields are almost always non-null lists with non-null
+elements. If you want a nullable list make sure there is real semantic value in
+being able to distinguish between an empty list and a null one.*
 
-<sub>🧚‍♀️ <옮긴이> 시맨틱 값(semantic value): 의미론적인 값이란, 함수나 값이 어떤 것인지 설명하지 않아도 그 이름만으로 어떤 역할, 어떤 의미를 가지는 지 알아볼 수 있는 값입니다. HTML을 예로 들면, `<p style="font-size: 32px;"> header </p>`라고 표현하는 것보다 `<header> header </header>`라고 표현하는 것이 해당 태그가 무엇인지 더 알아보기 쉬울 것입니다.</sub>
+The second field is a bit weird: it is a boolean field indicating whether the
+rules apply disjunctively or not. It is also non-null, but here we run into a
+problem: what value should this field take for manual collections? Making it
+either false or true feels misleading, but making the field nullable then makes
+it a kind of weird tri-state flag which is also awkward when dealing with
+automatic collections. While we're puzzling over this, there is one other thing
+that is worth mentioning: these two fields are obviously and intricately related.
+This is true semantically, and it's also hinted by the fact that we chose names
+with a shared prefix. Is there a way to indicate this relationship in the schema
+somehow?
 
-두번째 필드는 살짝 이상합니다. 이것은 규칙이 불분명하게 적용되는지 아닌지 알려주는 boolean 타입의 필드입니다. 이 또한 non-null 필드지만 여기에는 문제가 있습니다. 수동적인 collection에서는 어떤 값이 이 필드에 들어와야 할까요?
-
-fales나 true로 두는 것 어떤 것도 잘못된 방법처럼 느껴집니다. 그렇다고 필드를 nullable로 만드는 것 또한, 일종의 이상한.. 3개주 지역의 깃발처럼 되어(null, false, true) 자동적인 collection을 다루기에도 어색해집니다. 우리가 이 문제를 해결하고 있는 동안, 언급할 만한 다른 하나의 사실이 있습니다. 이 두 필드 사이에는 복잡하지만 명확한 관계가 있다는 것입니다. 이것은 의미론적으로 사실이며, 우리가 공통된 접두사를 붙였다는 것에서도 알 수 있습니다. 그렇다면, 어떤 방법으로 스키마에서 이 관계를 드러낼 수 있을까요? 
-
-사실, 우리는 기본적인 구현으로부터 멀리 벗어나, 직접적인 모델과는 다른, 새로운 graphQL type을 도입함으로써 이런 문제를 단번에 해결할 수 있습니다. 그 type을 `CollectionRuleSet`이라고 합니다. 이것은 여러분이 값이나 행위가 연결되어 있는, 근접한 관계에 있는 필드들의 집합을 갖고 있을 때 종종 사용됩니다. 두 필드를 API에서 우리가 만든 type으로 그룹핑함으로써, 우리는 깔끔한 시맨틱 식별자를 제공할 수 있고 우리가 nullability와 관련해서 가졌던 모든 문제를 해결할 수 있습니다. 수동적인 collection에서는, 우리는 rule-set을 그 자체로 null로 둡니다. boolean 필드는 non-null로 남을 수 있습니다. 다음처럼 설계할 수 있습니다. 
+As a matter of fact, we can solve all of these problems in one fell swoop by
+deviating even further from our underlying implementation and introducing a new
+GraphQL type with no direct model equivalent: `CollectionRuleSet`. This is often
+warranted when you have a set of closely-related fields whose values and
+behaviour are linked. By grouping the two fields into their own type at the API
+level we provide a clear semantic indicator and also solve all of our problems
+around nullability: for manual collections, it is the rule-set itself which is
+null. The boolean field can remain non-null. This leads us to the following
+design:
 
 ```graphql
 type Collection implements Node {
@@ -287,21 +376,35 @@ type CollectionRule {
 }
 ```
 
-*Protip: list 같이, boolean 필드도 거의 항상 non-null입니다. 만약 nullable한 boolean을 원한다면, null, false, true의 세 가지 상태를 구별할 수 있는 시맨틱 값을 포함시켜야 합니다. 그리고 이런 행위가 더 큰 설계 결함을 일으키지 않는 지도 확인해야 합니다.*
+*Protip: Like lists, boolean fields are almost always non-null. If you want a
+nullable boolean, make sure there is real semantic value in being able to
+distinguish between all three states (null/false/true) and that it doesn't
+indicate a bigger design flaw.*
 
-*규칙 #6: 근접한 관계를 가진 필드는 하위-객체로 그룹핑하세요.*
+*Rule #6: Group closely-related fields together into subobjects.*
 
 ### Lists and Pagination
 
-다음은 `products` 필드를 볼 차례입니다. 보기에는 안전해 보입니다. `CollectionMembership`을 제거했을 때, 이미 이 relation을 고친 뒤지만, 여기에는 또 다른 문제가 있습니다.   
+Next on the chopping block is our `products` field. This one might seem safe;
+after all we already "fixed" this relation back when we removed our `CollectionMembership`
+type, but in fact there's something else wrong here.
 
-현재 이 필드는 products 배열을 반환하도록 정의되어있으나, collection들은 몇 십, 몇 천의 products를 가질 수 있습니다. 그리고 그 모든 것들을 하나의 배열로 모으는 것은 아주 큰 비용을 치뤄야 하며 비효율적일 수도 있습니다. 이런 상황 때문에, graphQL은 lists pagination이라는 것을 제공합니다. 
+The field as currently defined returns an array of products, but collections can
+easily have many tens of thousands of products, and trying to gather all of
+those into a single array would be incredibly expensive and inefficient. For
+situations like this, GraphQL provides lists pagination.
 
-여러 객체를 반환하는 필드나 릴레이션을 구현할 때마다, 항상 스스로에게 그 필드를 페이지네이션할 수 있는지 묻길 바랍니다. 필드에 얼마나 많은 객체가 들어올 수 있을까요? 최대한으로 생각하는 수량은 어느 정도인가요?
+Whenever you implement a field or relation returning multiple objects, always
+ask yourself if the field should be paginated or not. How many of this object
+can there be? What quantity is considered pathological?
 
-필드를 페이지네이션하기 위해서는 페이지네이션 솔루션을 먼저 구현해야합니다. 이 튜토리얼은 [Connections](https://graphql.org/learn/pagination/#complete-connection-model)을 사용합니다. 이것은 [Relay Connection spec](https://facebook.github.io/relay/graphql/connections.htm)에 정의되어 있습니다. 
+Paginating a field means you need to implement a pagination solution first.
+This tutorial uses [Connections](https://graphql.org/learn/pagination/#complete-connection-model)
+which is defined by the [Relay Connection spec](https://facebook.github.io/relay/graphql/connections.htm).
 
-이 경우, 우리 설계에서 products 필드를 페이지네이션하는 것은 그것의 정의를 `products: ProductConnection!`로 바꾸는 것 만큼이나 간단합니다. 여러분이 connections를 구현한다고 가정하면, type은 다음과 같아집니다.
+In this case, paginating the products field in our design is as simple as
+changing its definition to `products: ProductConnection!`. Assuming you have
+connections implemented, your types would look like this:
 
 ```graphql
 type ProductConnection {
@@ -320,21 +423,38 @@ type PageInfo {
 }
 ```
 
-*규칙 #7: 항상 list 필드가 페이지네이션될 수 있는지 아닌지 확인하세요.*
+
+*Rule #7: Always check whether list fields should be paginated or not.*
 
 ###  Strings
 
-다음은 `title` 필드입니다. 합리적으로 괜찮은 방법입니다. 간단한 문자열이고, non-null로 표시됩니다. 왜냐하면, collection들은 각각 title을 가져야하니까요.
+Next up is the `title` field. This one is legitimately fine the way it is. It's
+a simple string, and it's marked non-null because all collections must have a
+title.
 
-*Protip: boolean, list와 마찬가지로, graphQL은 빈 문자열과 null을 구분합니다. 그러니 nullable한 문자열을 원할 땐, 타당한 표현이지만 비어있는(`""`) 것과 표현되지 않는 것(`null`) 사이에 시맨틱한 차이점이 있는지 확인해보세요. 빈 문자열을 "적용 가능하지만 채워지지 않는다"는 의미로 생각할 수 있으며, null 문자열은 "적용할 수 없다"는 것으로 종종 생각할 수 있습니다.*
+*Protip: As with booleans and lists, it's worth noting that GraphQL does
+distinguish between empty strings (`""`) and nulls (`null`), so if you need a
+nullable string make sure there is a legitimate semantic difference between
+not-present (`null`) and present-but-empty (`""`). You can often think of empty
+strings as meaning "applicable, but not populated", and null strings meaning
+"not applicable".*
 
 ### IDs and Relations
 
-이제 `imageId` 필드로 왔습니다. 이 필드는 우리가 REST 설계를 GraphQL에 적용할 때 발생하는 클래식한 예시입니다. REST API에서 다른 객체를 연결하기 위해 response에 다른 객체 ID를 포함하는 것은 꽤 흔한 일입니다.
+Now we come to the `imageId` field. This field is a classic example of what
+happens when you try and apply REST designs to GraphQL. In REST APIs it's
+pretty common to include the IDs of other objects in your response as a way to
+link together those objects, but this is a major anti-pattern in GraphQL.
+Instead of providing an ID, and forcing the client to do another round-trip to
+get any information on the object, we should just include the object directly
+into the graph - that's what GraphQL is for after all. In REST APIs this pattern
+often isn't practical, since it inflates the size of the response significantly
+when the included objects are large. However, this works fine in GraphQL because
+every field must be explicitly queried or the server won't return it.
 
-객체에 대한 다른 정보를 얻기 위해, ID를 제공하거나 클라이언트에게 (input, output을 주고 받는) 왕복을 하도록 강요하는 대신에, 직접적으로 graph에 객체를 포함하는 것이 좋습니다. 그게 바로 GraphQL이 존재하는 목적이죠. REST API에서는 이 패턴은 종종 실용적이지 않을 수 있습니다. 객체의 사이즈가 클 때는 response의 크기가 상당히 증가할 수 있기 때문입니다. 그러나 GraphQL에서는 괜찮습니다. 왜냐하면 모든 필드는 반드시 명시적으로 질의되거나, 서버가 이것을 반환하지 않을 것이기 때문입니다.
-
-일반적인 규칙으로서, 설계에서 ID 필드들은 오직 해당 오브젝트 자신의 ID 필드여야합니다. 다른 객체의 ID 필드를 가질 때는, 그것은 아마도 그 객체의 레퍼런스가 되어야할 것입니다. 이 규칙을 우리 스키마에 적용하면, 다음과 같습니다.
+As a general rule, the only ID fields in your design should be the IDs of the
+object itself. Any time you have some other ID field, it should probably be an
+object reference instead. Applying this to our schema so far, we get:
 
 ```graphql
 type Collection implements Node {
@@ -362,33 +482,66 @@ type CollectionRule {
 }
 ```
 
-*규칙 #8: 다른 ID 필드들을 사용하기보다는, 항상 객체 레퍼런스를 사용하세요.*
+*Rule #8: Always use object references instead of ID fields.*
 
 ### Naming and Scalars
 
-우리의 `Collection` type에서 마지막 필드는 `bodyHtml`입니다. collections가 구현되는 방법에 친숙하지 않는 사용자에게는 이 필드의 역할이 완전히 명확하지는 않을 것입니다. 이것은 특정 collection에 대한 body description입니다. 우리가 이 API를 더 나은 것으로 만들기 위해 첫번째로 할 수 있는 것은 이 필드의 이름을 그저 `description`으로 바꾸는 것입니다. 그게 훨씬 더 명확한 이름같습니다.
+The last field in our simple `Collection` type is `bodyHtml`. To a user who is
+unfamiliar with the way that collections were implemented, it's not entirely
+obvious what this field is for; it's the body description of the specific
+collection. The first thing we can do to make this API better is just to rename
+it to `description`, which is a much clearer name.
 
-*규칙 #9: 구현 또는 기존 API에서 그 필드가 무엇으로 불렸는지에 근거하기 보다는 좀 더 명확한 필드 이름을 선택하세요.*
+*Rule #9: Choose field names based on what makes sense, not based on the
+implementation or what the field is called in legacy APIs.*
 
-다음으로 우리는 이것을 non-nullable로 만들 수 있습니다. title 필드에 대해서 말했던 것처럼, 필드가 null이 되는 것과, 단순히 빈 문자열인 것을 구분하는 것은 타당한 일이 아닙니다. 그래서 우리는 이것을 API에는 노출시키지 않을 것입니다. 데이터베이스 스키마가 컬럼에서 값이 null을 가지도록 허락한다 해도, 우리는 구현 단에서 이것을 숨길 수 있습니다. 
+Next, we can make it non-nullable. As we talked about with the title field, it
+doesn't make sense to distinguish between the field being null and simply being
+an empty string, so we don't expose that in the API. Even if your database
+schema does allow records to have a null value for this column, we can hide that
+at the implementation layer.
 
-마지막으로, 우리는 `String`이 이 필드에 실질적으로 맞는 type인지 고려해봐야 합니다. GraphQL은 꽤 괜찮은 스칼라 타입의 집합을 내장하고 있습니다. 하지만 이것은 여러분 스스로 그것을 정의하도록 합니다. 그리고 그것이 이 기능을 사용하는 주요한 이유이기도 합니다. 대부분의 스키마들은 스스로 추가적인 스칼라 집합을 정의합니다. 이것은 클라이언트에게 시맨틱 값이나 추가적인 context를 제공합니다. 문제의 문자열이 유효한 HTML이어야 하는 경우, 여기에(잠재적으로는 다른 곳에도) 사용자 정의 `HTML` 스칼라를 정의하는 것이 타당할 것입니다.
+Finally, we need to consider if `String` is actually the right type for this
+field. GraphQL provides a decent set of built-in scalar types (`String`, `Int`,
+`Boolean`, etc) but it also lets you define your own, and this is a prime use
+case for that feature. Most schemas define their own set of additional scalars
+depending on their use cases. These provide additional context and semantic
+value for clients. In this case, it probably makes sense to define a custom
+`HTML` scalar for use here (and potentially elsewhere) when the string in
+question must be valid HTML.
 
-여러분이 스칼라 필드를 추가할 때마다, 이미 존재하는 사용자 정의 스칼라 리스트를 확인하는 것이 좋습니다. 새로 만들기 보다는, 이미 존재하는 것 중에 더 잘 맞는 게 있을 수 있으니까요. 만약, 여러분이 필드를 추가하고 있고, 여러분이 생각하기에 새로운 사용자 정의 스칼라가 더 적당하다면, 팀과 상의하여 올바른 개념을 파악하고 있는지 확인해보는 것이 좋습니다.
+Whenever you're adding a scalar field, it's worth checking your existing list of
+custom scalars to see if one of them would be a better fit. If you're adding a
+field and you think a new custom scalar would be appropriate, it's worth talking
+it over with your team to make sure you're capturing the right concept.
 
-*규칙 #10: 무언가 구체적인 시맨틱 값을 노출할 때는 사용자 정의 스칼라 타입을 사용하세요.*
+*Rule #10: Use custom scalar types when you're exposing something with specific
+semantic value.*
 
 ### Pagination Again
 
-지금까지 핵심적인 `Collection` type의 모든 필드를 살펴봤습니다. 다음 객체는 `CollectionRuleSet`입니다. 꽤 간단한 객체죠. 여기서의 문제는 그저 rules의 리스트가 페이지네이션 되어야하는가 말아야하는가일 뿐입니다. 이 경우에는, 기존의 배열이 더 타당합니다. rules 리스트를 페이지네이션하는 것은 과잉 행동이 될 수 있습니다. 
-
-대부분의 collection들은 적은 규칙만을 가지기 때문입니다. 그리고 collection이 큰 rule set을 가지는 것은 좋은 활용 사례가 아닙니다. 규칙이 십여 가지가 된다면 products를 수동적으로 추가해야하거나, 그 collection이 옳은지 재고해봐야 하는 지표가 될 것입니다.
+That covers all of the fields in our core `Collection` type. The next object is
+`CollectionRuleSet`, which is quite simple. The only question here is whether or
+not the list of rules should be paginated. In this case the existing array
+actually makes sense; paginating the list of rules would be overkill. Most
+collections will only have a handful of rules, and there isn't a good use case
+for a collection to have a large rule set. Even a dozen rules is probably an
+indicator that you need to rethink that collection, or should just be manually
+adding products.
 
 ### Enums
 
-스키마의 마지막 type `CollectionRule`까지 왔습니다. 각각의 규칙은 일치하는 컬럼(예: 제품 제목), 관계 유형(예: 동등함), 사용을 위한 실질적인 값(예: "Boots(부츠)")으로 구성됩니다. 그리고 이것은 `condition`(조건)이라고 혼동되어 불리기도 합니다. 마지막 필드는 이름을 `column`으로 다시 지을 수 있습니다. 하지만, column은 데이터베이스 특유의 용어이며 우리는 GraphQL로 일하고 있습니다. 그러므로 `field`가 좀 더 나은 선택이 되겠네요.
+This brings us to the final type in our schema, `CollectionRule`. Each rule
+consists of a column to match on (e.g. product title), a type of relation (e.g.
+equality) and an actual value to use (e.g. "Boots") which is confusingly called
+`condition`. That last field can be renamed, and so should `column`; column is
+very database-specific terminology, and we're working in GraphQL. `field` is
+probably a better choice.
 
-Type에 따라서, `field`와 `relation`은 모두 내부적으로는 열거형(enumeration)으로 구현될 수 있습니다 (선택한 언어에 enum이 있다고 가정할 경우). 다행히 GraphQL은 enum도 갖고 있습니다! 그러므로 우리는 두 필드를 enum으로 전환할 수 있습니다. 우리의 복잡한 스키마 설계는 이제 다음과 같아집니다.
+As far as types go, both `field` and `relation` are probably implemented
+internally as enumerations (assuming your language of choice even has
+enumerations). Fortunately GraphQL has enums as well, so we can convert those
+two fields to enums. Our completed schema design now looks like this:
 
 ```graphql
 type Collection implements Node {
@@ -432,74 +585,150 @@ enum CollectionRuleRelation {
 }
 ```
 
-*규칙 #11: 오직 특정한 값의 집합만을 취하는 필드에는 enum을 사용하세요.*
+*Rule #11: Use enums for fields which can only take a specific set of values.*
 
 ## Step Four: Business Logic
 
-우리는 이제 collection들을 위한, 작지만 잘 설계된 GraphQL API를 갖고 있습니다. 우리가 아직 다루지 않은 collection들에 대한 수많은 세부사항이 있습니다 - 제품을 순서대로 정렬하거나 퍼블리싱 하는 등의 문제를 다룰 때, 이 기능을 실질적으로 구현하려면 훨씬 더 많은 필드가 필요할 지도 모릅니다 - 하지만 이러한 필드들은 모두 같은 설계 패턴을 따른다는 규칙이 있습니다. 그러나, 아직 몇 가지 더 들여다 봐야할 것들이 있습니다.
+We now have a minimal but well-designed GraphQL API for collections. There is a
+lot of detail to collections that we haven't dealt with - any real
+implementation of this feature would need a lot more fields to deal with things
+like product sort order, publishing, etc. - but as a rule those fields will all
+follow the same design patterns laid out here. However, there are still a few
+things which bear looking at in more detail.
 
-이 섹션을 위해, API를 사용할 가상의 클라이언트로부터 이것을 사용해야 할 동기를 얻으며 시작하는 것이 좋겠습니다. 그러므로 우리와 함께 일하는 클라이언트 개발자가 무언가 구체적인 것을 알고 싶어한다는 상상을 해봅시다: '주어진 product가 collection의 멤버인가 아닌가' 
+For this section, it is most convenient to start with a motivating use case from
+the hypothetical client of our API. Let us therefore imagine that the client
+developer we have been working with needs to know something very specific:
+whether a given product is a member of a collection or not. Of course, this is
+something that the client can already answer with our existing API: we expose
+the complete set of products in a collection, so the client simply has to
+iterate through, looking for the product they care about.
 
-물론 그 클라이언트는 이미 기존의 API를 통해 이 문제에 대한 답을 알 수 있을 것입니다: 우리가 products 집합을 완전히 collection 안에 노출시켰으므로, 클라이언트는 그저 product를 찾고, 그것을 반복시키며(iterate 하여) 확인해보면 됩니다. 
+This solution has two problems though. The first, obvious problem is that it's
+inefficient; collections can contain millions of products, and having the client
+fetch and iterate through them all would be extremely slow. The second, bigger
+problem, is that it requires the client to write code. This last point is a
+critical piece of design philosophy: the server should always be the single
+source of truth for any business logic. An API almost always exists to serve
+more than one client, and if each of those clients has to implement the same
+logic then you've effectively got code duplication, with all the extra work and
+room for error which that entails.
 
-그러나 이 방법에는 두 가지 문제가 있습니다. 첫번째, 비효율적입니다. collection은 수백만 개의 product를 가질 수 있습니다. 그리고 클라이언트가 product를 가져오고(fetch), 반복시키는 것은 매우 느린 일입니다. 두번째, (아주 큰 문제죠) 이것은 클라이언트로 하여금 코드를 쓰도록 요구합니다. 이 부분은 설계 철학에 있어 아주 중요한 부분입니다. 서버는 항상 어떤 비즈니스 로직이든 단 하나의 공급자가 되어야 합니다. API는 거의 항상 하나의 클라이언트 이상에게 서비스하기 위해 존재합니다. 그리고 만약 이 클라이언트들 각각이 같은 로직을 구현해야 한다면, 이것은 오류를 수반하는 추가적인 작업과 공간(메모리)과 함께 코드의 중복을 야기합니다.
+*Rule #12: The API should provide business logic, not just data. Complex
+calculations should be done on the server, in one place, not on the client, in
+many places.*
 
-*규칙 #12: API는 데이터가 아닌 비즈니스 로직을 제공해야 합니다. 복잡한 계산은 클라이언트 여러 곳에서가 아닌, 서버 한 곳에서 처리해야 합니다.*
-
-우리 클라이언트가 이 API를 활용하는 사례로 돌아가봅시다. 가장 최고의 정답은 이 문제를 해결하는 데에만 특정하게 사용될 새로운 필드를 제공하는 것입니다. 다음과 같습니다:
-
+Back to our client use-case, the best answer here is to provide a new field
+specifically dedicated to solving this problem. Practically, this looks like:
 ```graphql
 type Collection implements Node {
   # ...
   hasProduct(id: ID!): Bool!
 }
 ```
+This field takes the ID of a product and returns a boolean based on the server
+determining if a product is in the collection or not. The fact that this sort-of
+duplicates the data from the existing `products` field is irrelevant. GraphQL
+returns only what clients explicitly ask for, so unlike REST it does not cost us
+anything to add a bunch of secondary fields. The client doesn't have to write
+any code beyond querying an additional field, and the total bandwidth used is a
+single ID plus a single boolean.
 
-이 필드는 product의 ID를 취합니다. 그리고 서버에서 이 product가 collection에 있는지 없는 지 결정하는 대로 boolean을 반환합니다. 이미 존재하는 `products` 필드로부터 일종의 중복된 데이터를 만드는 것과는 상관 없습니다. GraphQL은 오직 클라이언트가 명시적으로 요청하는 것만 반환합니다. 따라서, REST와는 달리 부가적인 필드를 생성하는 데에 어떠한 비용도 요구하지 않습니다. 클라이언트는 추가적인 필드를 질의하는 것 이상으로는 어떤 코드도 쓸 필요 없습니다. 그리고 사용된 총 대역폭은 단일 ID + 단일 boolean 뿐입니다.
+One follow-up warning though: just because we're providing business logic in a
+situation does not mean we don't have to provide the raw data too. Clients
+should be able to do the business logic themselves, if they have to. You can’t
+predict all of the logic a client is going to want, and there isn't always an
+easy channel for clients to ask for additional fields (though you should strive
+to ensure such a channel exists as much as possible).
 
-그러나 한 가지 경고가 따릅니다: 우리가 비즈니스 로직을 제공한다는 상황이 raw data(원시 데이터)를 제공해서는 안된다는 것을 의미하지는 않습니다. 만약 필요하다면, 클라이언트는 스스로 비즈니스 로직을 처리할 수 있어야 합니다. 클라이언트가 원하는 모든 로직을 예측할 수는 없습니다. 그리고 클라이언트가 추가적인 필드를 요청할 수 있는 쉬운 채널이 항상 존재하는 것도 아닙니다 (하지만 그러한 채널이 존재하도록 노력해야 합니다).
+*Rule #13: Provide the raw data too, even when there's business logic around it.*
 
-*규칙 #13: 비즈니스 로직이 있을 지라도, raw data(원시 데이터)도 함께 제공하세요.*
-
-마지막으로, 비즈니스 로직 필드가 전체적인 API 모양에 영향을 주지 않도록 주의하세요. 비즈니스 도메인의 데이터는 여전히 핵심적인 모델입니다. 만약 비즈니스 로직이 정말 맞지 않는다고 생각한다면, 그것은 근본적인 모델이 적합하지 않다는 신호가 될 수 있습니다.
+Finally, don't let business-logic fields affect the overall shape of the API.
+The business domain data is still the core model. If you're finding the business
+logic doesn't really fit, then that's a sign that maybe your underlying model
+isn't right.
 
 ## Step Five: Mutations
 
-마지막으로 GraphQL 스키마 설계에서 빠진 부분은 실제로 값을 변형시킬 수 있는 기능입니다: collection 또는 그와 관련된 부분을 생성, 수정, 제거하는 것을 말합니다. 스키마와 마찬가지로, 우리는 높은 수준의 관점에서부터 시작해야 합니다: 이 경우, 우리는 단지 구체적인 input, output을 고려할 필요 없이 mutation을 구현하길 원합니다. CRUD(Create, Read, Update, Delete) 패러다임을 따라서 그저 단순하게 `create`, `delete`, `update` mutation을 가질 수 있습니다. 괜찮은 시작이지만, 적절한 GraphQL API에는 충분하지 않습니다.  
+The final missing piece of our GraphQL schema design is the ability to actually
+change values: creating, updating, and deleting collections and related pieces.
+As with the readable portion of the schema we should start with a high-level
+view: in this case, of just the various mutations we will want to implement,
+without worrying about their specific inputs or outputs. Naively we might follow
+the CRUD paradigm and have just `create`, `delete`, and `update` mutations.
+While this is a decent starting place, it is insufficient for a proper GraphQL
+API.
 
 ### Separate Logical Actions
 
-만약 단순히 CRUD를 고집한다면, 우리가 제일 먼저 알 수 있는 것은 `update` mutation이 빠르게 거대해질 것이라는 겁니다. 해당 mutation에는 title과 같은 간단한 스칼라 값을 수정하는 역할만 있는 게 아닙니다. 퍼블리싱/언퍼블리싱, collection 내의 product들을 추가/제거/재정렬, 자동적인 collection의 규칙을 변형하는 등 복잡한 행위(action)를 수행하는 데에도 쓰일 수 있습니다. 이로 인해, 서버에서는 구현하기 어렵고 클라이언트는 이 mutation이 어떤 행위를 하는지 추론하기 어렵습니다. 대신, 우리는 좀 더 알맹이 있는 논리적인 행위(action)로 mutation을 분할하기 위해서 GraphQL의 이점을 취할 수 있습니다. 가장 먼저, 다음과 같은 mutation 리스트를 생성하여 퍼블리싱과 언퍼블리싱을 분리할 수 있습니다.
-
+The first thing we might notice if we were to stick to just CRUD is that our
+`update` mutation quickly becomes massive, responsible not just for updating
+simple scalar values like title but also for performing complex actions like
+publishing/unpublishing, adding/removing/reordering the products in the
+collection, changing the rules for automatic collections, etc. This makes it
+hard to implement on the server and hard to reason about for the client.
+Instead, we can take advantage of GraphQL to split it apart into more granular,
+logical actions. As a very first pass, we can split out publish/unpublish
+resulting in the following mutation list:
 - create
 - delete
 - update
 - publish
 - unpublish
 
-*규칙 #14: 리소스 각각의 논리적 행위(action)에 맞는 각각의 mutation을 써보세요.*
+*Rule #14: Write separate mutations for separate logical actions on a resource.*
 
 ### Manipulating Relationships
 
-`update` mutation은 여전히 너무 많은 역할을 갖고 있습니다. 그러니 이것을 분리하는 작업을 계속해봅시다. 하지만, 우리는 이 행위들(actions)을 개별적으로 다룰 것입니다. 다른 차원으로부터 생각해보는 것 또한 가치 있는 일이 될테니까요: 객체의 관계(예: 일대다, 다대다) 조작. 우리는 이미 'ID 사용 vs 객체 끼워넣기(embedding)', 그리고 API 조회에 있어 '페이지네이션 vs 배열' 사용을 고려해봤습니다. 여기에는 그 관계들을 변형시킬 때 다뤄야 할 비슷한 이슈가 있습니다.
+The `update` mutation still has far too many responsibilities so it makes sense
+to continue splitting it up, but we will deal with these actions separately
+since they're worth thinking about from another dimension as well: the
+manipulation of object relationships (e.g. one-to-many, many-to-many). We've
+already considered the use of IDs vs embedding, and the use of pagination vs
+arrays in the read API, and there are some similar issues to deal with when
+mutating these relationships.
 
-products와 collections 사이의 관계에 대해, 우리가 광범위하게 고려해 볼 여러 스타일들이 있습니다.
+For the relationship between products and collections, there are a couple of
+styles we could broadly consider:
+- Embedding the entire relationship (e.g. `products: [ProductInput!]!`) into the
+  update mutation is the CRUD-style default, but of course it quickly becomes
+  inefficient when the list is large.
+- Embedding "delta" fields (e.g. `productsToAdd: [ID!]!` and
+  `productsToRemove: [ID!]!`) into the update mutation is more efficient since
+  only the changed IDs need to be specified instead of the entire list, but it
+  still keeps the actions tied together.
+- Splitting it up entirely into separate mutations (`addProduct`,
+  `removeProduct`, etc.) is the most powerful and flexible but also the most
+  work.
 
-- 전체적인 관계(예: `products: [ProductInput!]!`)를 updation mutation에 끼워넣는 것은 CRUD 기본 스타일입니다. 하지만 리스트가 커진다면 빠르게 비효율적으로 변합니다.
-- "delta" 필드(예: `productsToAdd: [ID!]!`와 `productsToRemove: [ID!]!`)를 update mutation에 끼워넣은 것은 전체 리스트 대신 변경된 ID들만 알려주면 되지만, 여전히 행위들(actions)을 함께 묶어 두므로 훨씬 더 비효율적입니다.
-- 전체적으로 이것을 개별적인 mutation으로 (`addProduct`, `removeProduct` 등) 분리하는 것은 가장 강력하고 유연할 뿐만 아니라 가장 잘 동작합니다.
+The last option is generally the safest call, especially since mutations like
+this will usually be distinct logical actions anyway. However, there are a lot
+of factors to consider:
+- Is the relationship large or paginated? If so, embedding the entire list is
+  definitely impractical, however either delta fields or separate mutations
+  could still work. If the relationship is always small though (especially if
+  it's one-to-one), embedding may be the simplest choice.
+- Is the relationship ordered? The product-collection relationship is ordered,
+  and permits manual reordering. Order is naturally supported by the embedded
+  list or by separate mutations (you can add a `reorderProducts` mutation)
+  but isn't an option for delta fields.
+- Is the relationship mandatory? Products and collections can both exist on
+  their own outside of the relationship, with their own create/delete lifecycle.
+  If the relationship were mandatory (i.e. products must be in a collection)
+  then this would strongly suggest separate mutations because the action would
+  actually be to *create* a product, not just to update the relationship.
+- Do both sides have IDs? The collection-rule relationship is mandatory (rules
+  can't exist without collections) but rules don't even have IDs; they are
+  clearly subservient to their collection, and since the relationship is also
+  small, embedding the list is actually not a bad choice here. Anything else
+  would require rules to be individually identifiable and that feels like
+  overkill.
 
-마지막 옵션이 일반적으로 가장 안전합니다. 특히 이런 mutation이라면 어쨌든 일반적으로 뚜렷한 논리 행위(logical action)가 될 것이기 때문입니다. 여기에는 고려해야될 많은 요인이 있습니다. 
+*Rule #15: Mutating relationships is really complicated and not easily
+ summarized into a snappy rule.*
 
-- 그 관계가 크거나 혹은 페이지네이션되는 것인가요? 만약 그렇다면, delta 필드 또는 개별적인 mutation가 적절할 수 있기에, 전체 리스트를 끼워넣는 것은 확실히 실용적이지 않습니다. 그러나 만약 관계가 항상 작다면 (특히 이것이 일대일 관계라면), 끼워넣기는 가장 간단한 선택이 될 수 있습니다.
-- 그 관계가 정렬되어 있나요? product-collection 관계는 정렬됩니다. 그리고 수동적으로 재정렬하죠. 순서는 embedded 리스트 또는 개별적인 mutation에 의해 자연스럽게 정렬됩니다 (`reorderProducts` mutation을 추가하면 됩니다). 하지만 delta 필드에서는 옵션이 아닙니다.
-- 그 관계는 의무적인가요? Products와 collection은 모두 관계를 벗어나 스스로 존재할 수 있습니다. 그들 스스로 create/delete의 생애주기를 거치면서요. 만약 그 관계가 의무적이라면(예를 들어, collection 내에 product가 반드시 존재해야 하는 경우), 개별적인 mutation을 강력하게 제안할 수 있습니다. 그 행위(action)는 단지 그 관계를 수정하는 것뿐만 아니라 실제로 product를 *생성*하니까요.
-- 양쪽에서 ID를 가지나요? collection-rule의 관계는 의무적입니다 (rule은 collection 없이는 존재할 수 없기 때문입니다). 하지만, rule은 ID조차도 가지지 않습니다. rule은 명확히 collection에 포함되고 그 관계가 작기 때문에, 여기서 리스트를 끼워넣는 것(embedding)은 실제로 나쁘지 않은 선택입니다. 그 밖에 다른 선택은 rule이 개별적으로 식별될 수 있도록 요구하는 것입니다(<옮긴이> rule마다 ID를 가지도록 요구)만 이것은 과한 것같네요.
-
-*규칙 #15: 관계를 변형시키는 것은 정말 복잡한 작업입니다. 그리고 짧고 분명한 규칙으로 요약하는 것도 쉽지 않습니다.*
-
-이 모든 것을 함께 섞는다면, collection에 대해 우리는 다음의 mutation 리스트를 작성할 수 있습니다.
-
+ If you stir all of this together, for collections we end up with the following
+ list of mutations:
 - create
 - delete
 - update
@@ -509,26 +738,43 @@ products와 collections 사이의 관계에 대해, 우리가 광범위하게 �
 - removeProducts
 - reorderProducts
 
-Products는 관계가 크고 순서가 있는 것이기 때문에 그들 자신의 mutation으로 분리했습니다. Rule은 관계가 작고 ID를 가지지 않아도 될 만큼 충분히 작기 때문에 인라인으로 남겨두었습니다.
+Products we split into their own mutations, because the relationship is large
+and ordered. Rules we left inline because the relationship is small, and rules
+are sufficiently minor to not have IDs.
 
-마지막으로, 우리는 product mutation들이 products 집합에 영향을 준다는 사실을 알 수 있습니다 (예: "addProduct"가 아닌 "addProducts"). 클라이언트에게도 편리합니다. 그 관계를 조작할 때, 일반적으로 사용되는 경우는 한 번에 두 개 이상의 product를 추가, 제거 또는 재정렬하는 것이기 때문입니다. 
+Finally, you may note our product mutations act on sets of products, for example
+`addProducts` and not `addProduct`. This is simply a convenience for the client,
+since the common use case when manipulating this relationship will be to add,
+remove, or reorder more than one product at a time.
 
-*규칙 #16: 관계에 대한 개별적인 mutation을 작성할 때, 그 mutation이 여러 개의 요소를 한 번에 작업하는 데 유용한지 고려해보세요.*
+*Rule #16: When writing separate mutations for relationships, consider whether
+ it would be useful for the mutations to operate on multiple elements at once.*
 
 ### Input: Structure, Part 1
 
-이제 우리가 작성하고 싶은 mutaion이 어떤 것인지 알 것 같습니다. 그러니 지금부터는 mutation의 input 구조가 어떻게 생겼는지 이해해봅시다. 만약 여러분이 공개적으로 사용 가능한 실제 products 스키마를 본 적이 있다면, 많은 mutation이 그들의 인자를 모두 단일 전역 input type으로 정의한다는 것을 알아챌 수 있습니다: 이런 패턴은 기존 고객의 요구일 수도 있으나 새로운 코드에는 더 이상 필요하지 않습니다. 우리는 이런 패턴을 무시하도록 합시다. 
+Now that we know which mutations we want to write, we get to figure out what
+their input structures look like. If you've been browsing any of the real
+production schemas that are publicly available, you may have noticed that many
+mutations define a single global `Input` type to hold all of their arguments:
+this pattern was a requirement of some legacy clients but is no longer needed
+for new code; we can ignore it.
 
-많은 간단한 mutation들은 이 단계를 간단하게 만들기 위해 하나 또는 소수의 ID들이 필요합니다. collections 중에서, 우리는 빠르게 다음의 mutation 인자들을 생각해낼 수 있습니다.
-- `delete`, `publish` 그리고 `unpublish`는 모두 단일 collection ID를 필요로 합니다.
-- `addProducts`와 `removeProducts`는 모두 product IDs뿐만 아니라, collection ID 또한 필요로 합니다. 
+For many simple mutations, an ID or a handful of IDs are all that is needed,
+making this step quite simple. Among collections, we can quickly knock out the
+following mutation arguments:
+- `delete`, `publish` and `unpublish` all simply need a single collection ID
+- `addProducts` and `removeProducts` both need the collection ID as well as a
+  list of product IDs
 
-이렇게 하면, 설계를 위한 오직 3가지의 "복잡한" input만이 남습니다:
+This leaves us with only three remaining "complicated" inputs to design:
 - create
 - update
 - reorderProducts
 
-create부터 시작해봅시다. 아주 단순한 input은 우리가 처음에 만들었던 원래의 단순한 collection 모델과 비슷해보이기도 합니다. 그러나 우리는 이미 그것보다 잘할 수 있습니다. 마지막 collection 모델과 위에서 논의했던 관계(relationships)에 근거해서 우리는 다음과 같은 것부터 시작할 수 있습니다:
+Let's start with create. A very naive input might look kind of like our original
+naive collection model when we started, but we can already do better than that.
+Based on our final collection model and the discussion of relationships above,
+we can start with something like this:
 
 ```graphql
 type Mutation {
@@ -552,27 +798,68 @@ input CollectionRuleInput {
 }
 ```
 
-먼저 네이밍을 빠르게 생각해봅시다: 우리는 모든 mutatation의 이름을 `collection<Action>`와 같은 형식으로 지었습니다. `<action>Collection`이 좀 더 영어에 친숙한 표현이긴 하지만요. 불행히도 GraphQL은 mutation을 조직화하거나 그룹핑하는 함수를 제공하지 않습니다. 따라서 이를 해결하려면 이것을 알파벳으로 문자화해야만 합니다. 핵심 type을 먼저 입력하면, 관련된 모든 mutation 그룹이 최종 리스트에 함께 표시됩니다. 
+First a quick note on naming: you'll notice that we named all of our mutations
+in the form `collection<Action>` rather than the more naturally-English
+`<action>Collection`. Unfortunately, GraphQL does not provide a method for
+grouping or otherwise organizing mutations, so we are forced into
+alphabetization as a workaround. Putting the core type first ensures that all of
+the related mutations group together in the final list.
 
-*규칙 #17: 알파벳 그룹핑(예:  `cancelOrder` 대신 `orderCancel` 사용)을 위해 변형시키는 객체를 mutation의 접두사로 만드세요.*
+*Rule #17: Prefix mutation names with the object they are mutating for
+ alphabetical grouping (e.g. use `orderCancel` instead of `cancelOrder`).*
 
 ### Input: Scalars
 
-이 초안은 단순한 접근법보다는 훨씬 더 낫습니다만, 여전히 완벽하지는 않습니다. 특히, `description`의 input 필드가 여전히 많은 문제를 갖고 있습니다. non-null `HTML` 필드는 collection의 description의 output에는 잘 맞지만, 몇 가지 이유로 input에는 적절하지 않습니다. 첫번째로, `!`은 output이 null이 될 수 없음을 명시하는 데 반해, input 역시 똑같이 null이 될 수 없음을 의미하지는 않습니다. 대신, 그 필드가 "필수적인(required)" 것인지에 대한 개념을 설명하는 것에 가깝습니다. 필수적인 필드는 클라이언트가 API를 요청하기 위해 반드시 제공해야 하는 필드를 의미합니다. 그리고 이것은 `description`에는 잘 맞지 않습니다. 우리는 클라이언트가 description을 제공하지 않는다고 해서 collection을 생성하지 못하도록 하는 것을 원하지 않습니다 (똑같이, 그들이 쓸 데 없는 `""`을 쓰도록 강제하고 싶지도 않습니다). 그러므로 우리는 `description`을 non-required로 만들어야 합니다.   
+This draft is a lot better than a completely naive approach, but it still isn't
+perfect. In particular, the `description` input field has a couple of issues. A
+non-null `HTML` field makes sense for the output of a collection's description,
+but it doesn't work as well for input for a couple of reasons. First-off, while
+`!` denotes non-nullability on output, it doesn't mean quite the same thing on
+input; instead it denotes more the concept of whether a field is "required". A
+required field is one the client must provide in order for the request to
+proceed, and this isn't true for `description`. We don't want to prevent clients
+from creating collections if they don't provide a description (or equivalently,
+we don't want to force them to provide a useless `""`), so we should make
+`description` non-required.
 
-*규칙 #18: 만약 mutation을 진행할 때, 의미론적으로 필요한 것이라면 input 필드를 필수적인 필드로 만드세요.*
+*Rule #18: Only make input fields required if they're actually semantically
+ required for the mutation to proceed.*
 
-다른 이슈는 `description`이 그 자체로 type이라는 것입니다. 이미 강한 타입이기 때문에(`String` 대신에 `HTML`을 쓰는 것처럼) 직관적이지 않아 보입니다. 그리고 우리는 지금까지 강한 타이핑을 해왔습니다. 하지만 다시, input은 조금 다르게 동작합니다. input에 대한 강한 타입의 유효성은 "사용자공간"에서 코드가 실행되기 전에 GraphQL 단에서 발생합니다. 이것은 현실적으로 클라이언트가 두 개의 차원에 대한 오류를 다뤄야 함을 의미합니다: GraphQL 차원의 유효성 오류, 그리고 비즈니스 차원의 유효성가 있습니다 오류(예: 현재 저장 공간의 한계로 생성할 수 있는 collection이 제한될 수 있습니다). 이 단계들을 간단하게 만들려면, 클라이언트가 미리 검증하기 어려울 때는 의도적으로 약한 타입의 input 필드를 선택해야 합니다. 이것은 비즈니스 로직 측에서 모든 유효성 검사를 가능케 하며, 클라이언트에게는 오직 한 공간에서의 오류만을 다룰 수 있게 합니다. 
+The other issue with `description` is its type; this may seem counter-intuitive
+since it is already strongly-typed (`HTML` instead of `String`) and we've been
+all about strong typing so far. But again, inputs behave a little differently.
+Validation of strong typing on input happens at the GraphQL layer before any
+"userspace" code gets run, which means that realistically clients have to deal
+with two layers of errors: GraphQL-layer validation errors, and business-layer
+validation errors (for example something like: you've reached the limit of
+collections you can create with your current storage). In order to simplify this
+process, we intentionally weakly type input fields when it might be difficult
+for the client to validate up-front. This lets the business-logic side handle
+all of the validation, and lets the client only deal with errors from one spot.
 
-*규칙 #19: 형식이 명확하고, 클라이언트 측에서 유효성 검사를 하기에 복잡할 것 같다면, input에 좀 더 약한 타입(예: `Email` 대신 `String`)을 사용하세요. 그러면, 서버가 모든 non-trivial한 유효성 검사를 한 번에 할 수 있고, 클라이언트는 조금 더 간단하게 만들면서 단일 형식으로 한 장소에서 오류를 반환할 수 있습니다.*
+*Rule #19: Use weaker types for inputs (e.g. `String` instead of `Email`) when
+ the format is unambiguous and client-side validation is complex. This lets the
+ server run all non-trivial validations at once and return the errors in a
+ single place in a single format, simplifying the client.*
 
-하지만, 약한 타입이 모든 input에 적합한 것은 아니라는 것을 알려드리고 싶습니다. 우리는 여전히 rule input에는  `field`와 `relation` 값에 대해 강한 타입의 enums를 사용하고 있습니다. 그리고 이런 사례에서라면 여전히 `DateTime`과 같은 같은 특정한 input에는 강한 타이핑을 사용하고 있을 지도 모릅니다. 뚜렷한 요인은 클라이언트 측의 유효성 검사가 복잡하다는 것과 input의 형식이 모호하다는 것입니다. HTML은 잘 정의되어 있고 명확하지만, 유효성을 검사하기에는 살짝 복잡합니다. 반면에, 날짜와 시간을 문자열로 표현하는 방법에는 수백 가지의 방법이 있습니다. 그것들은 모두 합리적으로 간단하며,어 우리가 기대하는 것이 어떤 형식인지 구체화하기 위해 강한 스칼라 타입으로부터 얻는 이점이 있습니다.  
+It is important to note, though, that this is not an invitation to weakly-type
+all your inputs. We still use strongly-typed enums for the `field` and
+`relation` values on our rule input, and we would still use strong typing for
+certain other inputs like `DateTime`s if we had any in this example. The key
+differentiating factors are the complexity of client-side validation and the
+ambiguity of the format. HTML is a well-defined, unambiguous specification, but
+is quite complex to validate. On the other hand, there are hundreds of ways to
+represent a date or time as a string, all of them reasonably simple, so it
+benefits from a strong scalar type to specify which format we expect.
 
-*규칙 #20: 형식이 모호하고, 클라이언트 측에서의 유효성 검사가 간단해보일 땐, input에 더 강한 타입(예: `String` 대신에 `DateTime`)을 사용하세요. 이는 명확성을 제공하고, 클라이언트가 좀 더 엄격하게 input 값을 통제할 수 있도록 만듭니다(예: free-text 필드 애신 날짜 선택 위젯을 사용하는 등).*
+*Rule #20: Use stronger types for inputs (e.g. `DateTime` instead of `String`)
+ when the format may be ambiguous and client-side validation is simple. This
+ provides clarity and encourages clients to use stricter input controls (e.g. a
+ date-picker widget instead of a free-text field).*
 
 ### Input: Structure, Part 2
 
-계속해서 update mutation을 보도록 합시다.
+Continuing on to the update mutation, it might look something like this:
 
 ```graphql
 type Mutation {
@@ -582,14 +869,24 @@ type Mutation {
 }
 ```
 
-create mutation과 update mutation이 매우 비슷하다는 걸 눈치채셨을 겁니다. 하지만, 두 가지는 다르군요: update mutation에는 어떤 collection이 수정될 지 결정할 `collectionId`라는 인자가 추가됐고, 이미 생성된 collection은 제목을 갖고 있으므로, update에서 `title`은 더 이상 필수 인자가 아닙니다. Title의 'required' 상태를 잠시 무시하면, 이 mutation 예시는 네 개의 중복된 인자를 갖습니다. 완전한 collections 모델은 그보다 더 많이 포함할 수 있습니다.
+You'll note that this is very similar to our create mutation, with two
+differences: a `collectionId` argument was added, which determines which
+collection to update, and `title` is no longer required since the collection
+must already have one. Ignoring the title's required status for a moment, our
+example mutations have four duplicate arguments, and a complete collections
+model would include quite a few more.
 
-이런 mutation을 그냥 놔두자는 주장도 있었습니다. 그러나, '필수'를 처리해야 하는 문제에도 불구하고, 우리는 인자의 공통된 부분을 줄이기로 했습니다. 이것은 몇 가지 이점이 있습니다:
-- 스키마가 이미 갖고 있는 단일 `Collection` type을 반영하며, collection 개념을 표현하는 '단일 input 객체'만을 다루면 됩니다.
-- 클라이언트는 (공통 패턴을 가진) create, update 폼 사이에 코드를 공유할 수 있습니다. 그들은 같은 종류의 input 객체를 다루기 때문입니다.
-- 몇 개의 최상위 인자만으로 Mutations이 깔끔해지고 읽기 쉬워집니다.
+While there are some arguments for leaving these mutations as-is, we have
+decided that situations like this call for DRYing up the common portions of the
+arguments, even at the cost of requiredness. This has a couple of advantages:
+- We end up with a single input object representing the concept of a collection
+  and mirroring the single `Collection` type our schema already has.
+- Clients can share code between their create and update forms (a common
+  pattern) because they end up manipulating the same kind of input object.
+- Mutations remain slim and readable with only a couple of top-level arguments.
 
-처리할 가장 큰 문제는 물론, collection이 생성될 때 그 제목이 필수적인지 아닌지 스키마에서는 확실하게 알 수 없다는 것이겠죠. 스키마는 결국 다음과 같아집니다.
+The primary cost, of course, is that it's no longer clear from the schema that
+the title is required on creation. Our schema ends up looking like this:
 
 ```graphql
 type Mutation {
@@ -606,13 +903,19 @@ input CollectionInput {
 }
 ```
 
-*규칙 #21: 특정 필드에서 \*완화된 '필수' 조건이 필요하다 하더라도, 중복을 줄일 수 있도록 mutation input을 짜보세요.*
-
-<sub>🧚‍♀ <옮긴이> 완화된 필수 조건(relaxing requiredness constraints): collectionUpdate의 title처럼, `!`는 붙지 않았지만 반드시 있을 것이라고 기대되는 필드를 말하는 것 같습니다.</sub>
+*Rule #21: Structure mutation inputs to reduce duplication, even if this
+ requires relaxing requiredness constraints on certain fields.*
 
 ### Output
 
-우리가 다룰 마지막 설계 문제는 mutatoin의 반환 값입니다. mutatoin은 성공하거나 실패할 수 있습니다. GraphQL은 쿼리 수준의 오류에 대해서는 확실하게 지원해주지만, 비즈니스 수준에서 mutation이 실패하는 것에 대해서는 그렇지 않습니다. 그러니 사용자보다는 클라이언트 측의 실수(예: 존재하지 않는 필드를 요청)에 대한 최상위 수준의 오류에 대비해야 합니다. 마찬가지로, 각 mutation은 유용한 다른 값들과 함께 사용자 오류에 대응하는 필드를 포함하는 "payload" type을 정의해야 합니다. Create라면 다음과 같이 표현할 수 있습니다:
+The final design question we need to deal with is the return value of our
+mutations. Typically mutations can succeed or fail, and while GraphQL does
+include explicit support for query-level errors, these are not ideal for
+business-level mutation failures. Instead, we reserve these top-level errors for
+failures of the client (e.g. requesting a non-existant field) rather than of the
+user. As such, each mutation should define a "payload" type which includes a
+user-errors field in addition to any other values that might be useful. For
+create, that might look like this:
 
 ```graphql
 type CollectionCreatePayload {
@@ -628,13 +931,19 @@ type UserError {
 }
 ```
 
-mutatoin이 성공한다면 `userErrors`에서는 빈 리스트를, `collection` 필드에서는 새롭게 생성된 collection을 반환할 것입니다. mutation이 성공하지 않는다면 하나 이상의 `userErrors` 객체를, collection 필드에는 `null`을 반환할 것입니다.
+Here, a successful mutation would return an empty list for `userErrors` and
+would return the newly-created collection for the `collection` field. An
+unsuccessful mutation would return one or more `UserError` objects, and `null`
+for the collection.
 
-*규칙 #22: mutation은 mutation payload에서 `userErrors` 필드를 통해 사용자/비즈니스 수준의 오류를 처리해야 합니다. 최상위 수준의 쿼리 오류 엔트리(The top-level query errors entry)는 클라이언트와 서버 수준의 오류에 대비해야 합니다.*
+*Rule #22: Mutations should provide user/business-level errors via a
+ `userErrors` field on the mutation payload. The top-level query errors entry is
+ reserved for client and server-level errors.*
 
-많은 구현에서, 이런 구조는 대부분 자동으로 제공됩니다. 여러분은 그저 `collection`의 반환 필드만 정의하면 됩니다.
+In many implementations, much of this structure is provided automatically, and
+all you will have to define is the `collection` return field.
 
-update mutation에서는, 우리는 정확히 그와 똑같은 패턴을 따를 수 있습니다.
+For the update mutation, we follow exactly the same pattern:
 
 ```graphql
 type CollectionUpdatePayload {
@@ -643,38 +952,43 @@ type CollectionUpdatePayload {
 }
 ```
 
-`collection`이 null이 가능하다는 것에 주목해주세요. 이는 제공된 ID가 유효한 collection을 나타내지 않는다면, 반환할 collection이 없기 때문입니다.
+It's worth noting that `collection` is still nullable even here, since if the
+provided ID doesn't represent a valid collection, there is no collection to
+return.
 
-*규칙 #23: 발생 가능한 모든 오류 케이스에서, 필드 값이 반드시 반환될 것이라는 확신이 들지 않는다면 mutation에 대한 대부분의 payload 필드는 null이 가능하도록 하는 게 좋습니다.*
+*Rule #23: Most payload fields for a mutation should be nullable, unless there
+ is really a value to return in every possible error case.*
 
 ## TLDR: The rules
 
-- *규칙 #1: 구체적인 필드를 다루기 전에, 항상 객체들과 그 사이의 relation을 높은 수준에서 바라보는 것부터 시작하세요.*
-- *규칙 #2: API를 설계할 때, 구현상의 디테일은 노출시키지 마세요.*
-- *규칙 #3: 구현도 UI도 기존 API도 아닌, 비즈니스 도메인에 맞춰 API를 설계하세요.*
-- *규칙 #4: 필드를 제거하는 것보다 추가하는 것이 더 쉽습니다.*
-- *규칙 #5: 주요한 비즈니스 객체 type은 항상 `Node`를 구현해야 합니다.*
-- *규칙 #6: 근접한 관계를 가진 필드는 하위-객체로 그룹핑하세요.*
-- *규칙 #7: 항상 list 필드가 페이지네이션될 수 있는지 아닌지 확인하세요.*
-- *규칙 #8: 다른 ID 필드들을 사용하기보다는, 항상 객체 레퍼런스를 사용하세요.*
-- *규칙 #9: 구현 또는 기존 API에서 그 필드가 무엇으로 불렸는지에 근거하기 보다는 좀 더 명확한 필드 이름을 선택하세요.*
-- *규칙 #10: 무언가 구체적인 시맨틱 값을 노출할 때는 사용자 정의 스칼라 타입을 사용하세요.*
-- *규칙 #11: 오직 특정한 값의 집합만을 취하는 필드에는 enum을 사용하세요.*
-- *규칙 #12: API는 데이터가 아닌 비즈니스 로직을 제공해야 합니다. 복잡한 계산은 클라이언트 여러 곳에서가 아닌, 서버 한 곳에서 처리해야 합니다.*
-- *규칙 #13: 비즈니스 로직이 있을 지라도, raw data(원시 데이터)도 함께 제공하세요.*
-- *규칙 #14: 리소스 각각의 논리적 행위(action)에 맞는 각각의 mutation을 써보세요.*
-- *규칙 #15: 관계를 변형시키는 것은 정말 복잡한 작업입니다. 그리고 짧고 분명한 규칙으로 요약하는 것도 쉽지 않습니다.*
-- *규칙 #16: 관계에 대한 개별적인 mutation을 작성할 때, 그 mutation이 여러 개의 요소를 한 번에 작업하는 데 유용한지 고려해보세요.*
-- *규칙 #17: 알파벳 그룹핑(예:  `cancelOrder` 대신 `orderCancel` 사용)을 위해 변형시키는 객체를 mutation의 접두사로 만드세요.*
-- *규칙 #18: 만약 mutation을 진행할 때, 의미론적으로 필요한 것이라면 input 필드를 필수적인 필드로 만드세요.*
-- *규칙 #19: 형식이 명확하고, 클라이언트 측에서 유효성 검사를 하기에 복잡할 것 같다면, input에 좀 더 약한 타입(예: `Email` 대신 `String`)을 사용하세요. 그러면, 서버가 모든 non-trivial한 유효성 검사를 한 번에 할 수 있고, 클라이언트는 조금 더 간단하게 만들면서 단일 형식으로 한 장소에서 오류를 반환할 수 있습니다.*
-- *규칙 #20: 형식이 모호하고, 클라이언트 측에서의 유효성 검사가 간단해보일 땐, input에 더 강한 타입(예: `String` 대신에 `DateTime`)을 사용하세요. 이는 명확성을 제공하고, 클라이언트가 좀 더 엄격하게 input 값을 통제할 수 있도록 만듭니다(예: free-text 필드 애신 날짜 선택 위젯을 사용하는 등).*
-- *규칙 #21: 특정 필드에서 \*완화된 '필수' 조건이 필요하다 하더라도, 중복을 줄일 수 있도록 mutation input을 짜보세요.*
-- *규칙 #22: mutation은 mutation payload에서 `userErrors` 필드를 통해 사용자/비즈니스 수준의 오류를 처리해야 합니다. 최상위 수준의 쿼리 오류 엔트리(The top-level query errors entry)는 클라이언트와 서버 수준의 오류에 대비해야 합니다.*
-- *규칙 #23: 발생 가능한 모든 오류 케이스에서, 필드 값이 반드시 반환될 것이라는 확신이 들지 않는다면 mutation에 대한 대부분의 payload 필드는 null이 가능하도록 하는 게 좋습니다.*
+- Rule #1: Always start with a high-level view of the objects and their relationships before you deal with specific fields.
+- Rule #2: Never expose implementation details in your API design.
+- Rule #3: Design your API around the business domain, not the implementation, user-interface, or legacy APIs.
+- Rule #4: It’s easier to add fields than to remove them.
+- Rule #5: Major business-object types should always implement Node.
+- Rule #6: Group closely-related fields together into subobjects.
+- Rule #7: Always check whether list fields should be paginated or not.
+- Rule #8: Always use object references instead of ID fields.
+- Rule #9: Choose field names based on what makes sense, not based on the implementation or what the field is called in legacy APIs.
+- Rule #10: Use custom scalar types when you’re exposing something with specific semantic value.
+- Rule #11: Use enums for fields which can only take a specific set of values.
+- Rule #12: The API should provide business logic, not just data. Complex calculations should be done on the server, in one place, not on the client, in many places.
+- Rule #13: Provide the raw data too, even when there’s business logic around it.
+- Rule #14: Write separate mutations for separate logical actions on a resource.
+- Rule #15: Mutating relationships is really complicated and not easily summarized into a snappy rule.
+- Rule #16: When writing separate mutations for relationships, consider whether it would be useful for the mutations to operate on multiple elements at once.
+- Rule #17: Prefix mutation names with the object they are mutating for
+ alphabetical grouping (e.g. use `orderCancel` instead of `cancelOrder`).
+- Rule #18: Only make input fields required if they're actually semantically required for the mutation to proceed.
+- Rule #19: Use weaker types for inputs (e.g. String instead of Email) when the format is unambiguous and client-side validation is complex. This lets the server run all non-trivial validations at once and return the errors in a single place in a single format, simplifying the client.
+- Rule #20: Use stronger types for inputs (e.g. DateTime instead of String) when the format may be ambiguous and client-side validation is simple. This provides clarity and encourages clients to use stricter input controls (e.g. a date-picker widget instead of a free-text field).
+- Rule #21: Structure mutation inputs to reduce duplication, even if this requires relaxing requiredness constraints on certain fields.
+- Rule #22: Mutations should provide user/business-level errors via a userErrors field on the mutation payload. The top-level query errors entry is reserved for client and server-level errors.
+- Rule #23: Most payload fields for a mutation should be nullable, unless there is really a value to return in every possible error case.
 
 ## Conclusion
 
-튜토리얼을 읽어주셔서 감사합니다. 이 튜토리얼을 통해 여러분이 어떻게 하면 좋은 GraphQL API를 설계할 지 명확한 아이디어가 생겼길 희망합니다. 
+Thank you for reading our tutorial! Hopefully by this point you have a solid
+idea of how to design a good GraphQL API.
 
-API를 디자인 해봤다면, 이제는 그것을 구현해보세요!
+Once you've designed an API you're happy with, it's time to implement it!
