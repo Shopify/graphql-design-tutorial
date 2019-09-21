@@ -1,25 +1,25 @@
 # Tutorial: Designing a GraphQL API
 
-本チュートリアルは[Shopify](https://www.shopify.ca/)によって社内向けに作られました。  
+本チュートリアルは[Shopify](https://www.shopify.ca/)によって社内向けに作られました。
 我々は本チュートリアルがGraphQL APIを利用する全ての方にとって役に立つと考え、公開版を作成するに至りました。
 
-本チュートリアルは、Shopifyのプロダクション環境における過去３年間のスキーマ構築と発展から得た学びに基づいています。  
-本チュートリアルはこれまでも発展してきましたし、今後も更新され続けるでしょう。  
+本チュートリアルは、Shopifyのプロダクション環境における過去３年間のスキーマ構築と発展から得た学びに基づいています。
+本チュートリアルはこれまでも発展してきましたし、今後も更新され続けるでしょう。
 ですから、本チュートリアルに盲目的に従ってすべてを取り込もうとせず、あなたの目的や状況に応じて役に立つ部分を適用してください。
 
 ## Intro
 
-ようこそ！本ドキュメントでは、新しいGraphQL APIの（あるいは既存のGraphQL APIの拡張の）設計方法をみていきます。  
+ようこそ！本ドキュメントでは、新しいGraphQL APIの（あるいは既存のGraphQL APIの拡張の）設計方法をみていきます。
 APIの設計は、繰り返し、実験し、ビジネスドメインの十分な理解を得るに値する挑戦的な仕事です。
 
 ## Step Zero: Background
 
-本チュートリアルでは、あるE-コマース運営企業の開発業務を想定します。  
-あなたはすでに商品情報を公開するための非常に小規模なGraphQL APIをもっています。  
-あなたのチームは、ちょうどコレクション機能のバックエンド部分の実装を終え、本機能をAPIで公開したいと考えています。  
+本チュートリアルでは、あるE-コマース運営企業の開発業務を想定します。
+あなたはすでに商品情報を公開するための非常に小規模なGraphQL APIをもっています。
+あなたのチームは、ちょうどコレクション機能のバックエンド部分の実装を終え、本機能をAPIで公開したいと考えています。
 
-コレクションは新しい主要機能で商品をグループにまとめることができます。  
-例えばあなたの所有するすべてのTシャツ商品をまとめたコレクションが考えられます。  
+コレクションは新しい主要機能で商品をグループにまとめることができます。
+例えばあなたの所有するすべてのTシャツ商品をまとめたコレクションが考えられます。
 コレクションはWebサイトにおいて商品をまとめて表示する際に利用できますし、自動化タスクにも利用できます（特定のコレクションの商品に対してのみ、ある割引価格と適用したい場合など。）
 
 バックエンドではコレクション機能は以下のように実装されました。
@@ -107,27 +107,27 @@ type CollectionMembership {
 }
 ```
 
-このシンプルな表現ではすべての値フィールド、フィールド名、Null制約の情報を取り除いてあります。  
-残ったものはGraphQLのように見える何かに過ぎませんが、型や関連性といった高いレベルで考えさせてくれます。  
+このシンプルな表現ではすべての値フィールド、フィールド名、Null制約の情報を取り除いてあります。
+残ったものはGraphQLのように見える何かに過ぎませんが、型や関連性といった高いレベルで考えさせてくれます。
 
-*ルール #1: 詳細に取り掛かる前に、高いレベルでオブジェクトとそれらの関連性を考えることからはじめよ。* 
+*ルール #1: 詳細に取り掛かる前に、高いレベルでオブジェクトとそれらの関連性を考えることからはじめよ。*
 
 ## Step Two: A Clean Slate
 
 それではこのシンプルな構造を用いて、当初の設計における主要な誤りをみていきましょう。
 
-以前に述べたとおり、我々の詳細実装は、手動コレクションと自動コレクション、そしてコレクションと商品を結合するコレクターテーブルを定義しています。  
+以前に述べたとおり、我々の詳細実装は、手動コレクションと自動コレクション、そしてコレクションと商品を結合するコレクターテーブルを定義しています。
 素朴なAPIデザインは明らかに詳細実装に依存して構築されていますが、これは誤りです。
 
-このアプローチの根本的な問題は、APIは詳細実装とは異なる目的の振る舞いを持ち、また多くの場合は抽象度のレベルも異なることです。  
+このアプローチの根本的な問題は、APIは詳細実装とは異なる目的の振る舞いを持ち、また多くの場合は抽象度のレベルも異なることです。
 今回のケースでは、我々の詳細実装によって多くの迷いが生じました。
 
 ### Representing `CollectionMembership`s
 
-現状のスキーマに `CollectionMembership` が含まれていることに気がついたかもしれません。  
-コレクションメンバーシップテーブルは商品とコレクションの間の他対他の関連を表現するために使われます。  
+現状のスキーマに `CollectionMembership` が含まれていることに気がついたかもしれません。
+コレクションメンバーシップテーブルは商品とコレクションの間の他対他の関連を表現するために使われます。
 最後の部分をもう一度読んでください、「*商品とコレクションの間*」の関連とあります。
-ビジネスドメインのセマンティクスからすれば、コレクションメンバーシップは意味を持っていないのです。  
+ビジネスドメインのセマンティクスからすれば、コレクションメンバーシップは意味を持っていないのです。
 コレクションメンバーシップは詳細実装です。
 
 これはつまり、我々のAPIに含まれないということを意味します。
@@ -160,23 +160,19 @@ type AutomaticCollectionRule { }
 
 ### Representing Collections
 
-This API design still has one major flaw, though it's one that's probably much
-less obvious without a really thorough understanding of the business domain. In
-our existing design, we model AutomaticCollections and ManualCollections as two
-different types, each implementing a common Collection interface. Intuitively
-this makes a fair bit of sense: they have a lot of common fields, but are
-still distinctly different in their relationships (AutomaticCollections have
-rules) and some of their behaviour.
+ビジネスドメインの十分な理解がないと気づかないかもしれませんが、まだ今のAPI設計には大きな誤りがひとつ残されています。
 
-But from a business model perspective, these differences are also basically an
-implementation detail. The defining behaviour of a collection is that it groups
-products; the method of choosing those products is secondary. We could expand
-our implementation at some point to permit some third method of choosing
-products (machine learning?) or to permit mixing methods (some rules and some
-manually added products) and *they would still just be collections*. You could
-even argue that the fact we don't permit mixing right now is an implementation
-failure. All of this to say is that the shape of our API should really look more
-like this:
+現状の設計では、手動コレクションと自動コレクションは共通のコレクションインターフェースを実装した異なる２つの型として定義されています。
+直感的には理にかなっているようにみえます。
+それらは多数の共通するフィールドを持っていますが、関連性（自動コレクションは選択ルールをもちます）と振る舞いにおいて明確な違いがあります。
+
+ビジネスモデルの観点からすれば、これらの差異も基本的には詳細実装です。
+コレクションの振る舞いとは、商品をグループにまとめることであり、どのようにしてそれら商品を選ぶかは従属的なものだからです。
+我々はいずれは第３の商品選択方法（機械学習？）を許容するかもしれませんし、複数の選択方法を組み合わせるかもしれません（選択ルールもあれば手動で選択するものもある。）
+それでも、*それらはコレクションにすぎないでしょう。*
+
+現時点において選択方法の組み合わせを見込んで許容しないのは、詳細実装の落ち度だと主張することもできます。
+つまり、APIデザインは次のようにすべきだと主張することもできるということです。
 
 ```graphql
 type Collection {
@@ -188,37 +184,29 @@ type Collection {
 type CollectionRule { }
 ```
 
-That's really nice. The immediate concern you may have at this point is that
-we're now pretending ManualCollections have rules, but remember that this
-relationship is a list. In our new API design, a "ManualCollection" is just a
-Collection whose list of rules is empty.
+それは良さそうにみえます。
+手動コレクションがルールを持っているように振る舞うことを懸念されるかもしれません。
+しかし、思い出してください、これは関連のリストなのです。
+我々のあたらしいAPI設計では、手動コレクションは単に選択ルールが無い（空）コレクションにすぎません。
 
 ### Conclusion
 
-Choosing the best API design at this level of abstraction necessarily requires
-you to have a very deep understanding of the problem domain you're modeling.
-It's hard in a tutorial setting to provide that depth of context for a specific
-topic, but hopefully the collection design is simple enough that the reasoning
-still makes sense. Even if you don't have this depth of understanding
-specifically for collections, you still absolutely need it for whatever domain
-you're actually modeling. It is critically important when designing your API
-that you ask yourself these tough questions, and don't just blindly follow the
-implementation.
+この抽象レベルにおけて最適なAPI設計を行うには、モデリング対象としているビジネスドメインへの深い理解が要求されます。
+ュートリアルの設定だけで特定の話題に関するコンテキストの深さをお伝えするのは困難ですが、本節のコレクション設計の例を通して、APIの設計方針を説明できていれば幸いです。
 
-On a closely related note, a good API does not model the user interface either.
-The implementation and the UI can both be used for inspiration and input into
-your API design, but the final driver of your decisions must always be the
-business domain.
+実際にモデリングしている対象が何であれコレクション設計の理解は必ず必要となります。
+API設計を行っている際には、どうあるべきかを自分自身に問い続ること、詳細実装に盲目的に従わないことが非常に重要です。
 
-Even more importantly, existing REST API choices should not necessarily be
-copied. The design principles behind REST and GraphQL can lead to very different
-choices, so don't assume that what worked for your REST API is a good choice for
-GraphQL.
+関連する点として、良いAPI設計はユーザインターフェースにも従属しません。
+詳細実装とUIのいずれも着想を得るためのインプットとして用いることができるものの、設計方針は常にビジネスドメインに従わなければなりません。
 
-As much as possible let go of your baggage and start from scratch.
+さらに重要な点として、既存のREST APIにおける決定事項を不必要に踏襲しないことです。
+REST APIとGraphQLの背後にある設計思想はまったく異なった決定を導く可能性があります。
+ですから、REST APIでうまくいったことがGraphQLでもそうであると想定してはいけません。
 
-*Rule #3: Design your API around the business domain, not the implementation,
-user-interface, or legacy APIs.*
+可能なかぎり、これまでの常識を取り外し、ゼロから考えるようにしましょう。
+
+*ルール #3: 詳細実装でも、ユーザインタフェースでも、あるいはレガシーなAPIでもなく、ビジネスドメインに従ってAPI設計を行うこと。*
 
 ## Step Three: Adding Detail
 
