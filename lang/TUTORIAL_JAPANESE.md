@@ -1,25 +1,25 @@
 # Tutorial: Designing a GraphQL API
 
-本チュートリアルは[Shopify](https://www.shopify.ca/)によって社内向けに作られました。
+本チュートリアルは[Shopify](https://www.shopify.ca/)によって社内向けに作られました。  
 我々は本チュートリアルがGraphQL APIを利用する全ての方にとって役に立つと考え、公開版を作成するに至りました。
 
-本チュートリアルは、Shopifyのプロダクション環境における過去３年間のスキーマ構築と発展から得た学びに基づいています。
-本チュートリアルはこれまでも発展してきましたし、今後も更新され続けるでしょう。
+本チュートリアルは、Shopifyのプロダクション環境における過去３年間のスキーマ構築と発展から得た学びに基づいています。  
+本チュートリアルはこれまでも発展してきましたし、今後も更新され続けるでしょう。  
 ですから、本チュートリアルに盲目的に従ってすべてを取り込もうとせず、あなたの目的や状況に応じて役に立つ部分を適用してください。
 
 ## Intro
 
-ようこそ！本ドキュメントでは、新しいGraphQL APIの（あるいは既存のGraphQL APIの拡張の）設計方法をみていきます。
+ようこそ！本ドキュメントでは、新しいGraphQL APIの（あるいは既存のGraphQL APIの拡張の）設計方法をみていきます。  
 APIの設計は、繰り返し、実験し、ビジネスドメインの十分な理解を得るに値する挑戦的な仕事です。
 
 ## Step Zero: Background
 
-本チュートリアルでは、あるE-コマース運営企業の開発業務を想定します。
-あなたはすでに商品情報を公開するための非常に小規模なGraphQL APIをもっています。
-あなたのチームは、ちょうどコレクション機能のバックエンド部分の実装を終え、本機能をAPIで公開したいと考えています。
+本チュートリアルでは、あるE-コマース運営企業の開発業務を想定します。  
+あなたはすでに商品情報を公開するための非常に小規模なGraphQL APIをもっています。  
+あなたのチームは、ちょうどコレクション機能のバックエンド部分の実装を終え、本機能をAPIで公開したいと考えています。  
 
-コレクションは新しい主要機能で商品をグループにまとめることができます。
-例えばあなたの所有するすべてのTシャツ商品をまとめたコレクションが考えられます。
+コレクションは新しい主要機能で商品をグループにまとめることができます。  
+例えばあなたの所有するすべてのTシャツ商品をまとめたコレクションが考えられます。  
 コレクションはWebサイトにおいて商品をまとめて表示する際に利用できますし、自動化タスクにも利用できます（特定のコレクションの商品に対してのみ、ある割引価格と適用したい場合など。）
 
 バックエンドではコレクション機能は以下のように実装されました。
@@ -32,8 +32,7 @@ APIの設計は、繰り返し、実験し、ビジネスドメインの十分�
 
 ## Step One: A Bird's-Eye View
 
-A naive version of the schema might look something like this (leaving out all
-the pre-existing types like `Product`):
+素朴にスキーマを定義すると以下のようになります（`Product` など既存の型は省略します。）
 ```graphql
 interface Collection {
   id: ID!
@@ -73,19 +72,15 @@ type CollectionMembership {
 }
 ```
 
-This is already decently complicated at a glance, even though it's only four
-objects and an interface. It also clearly doesn't implement all of the features
-that we would need if we're going to be using this API to build out e.g. our
-mobile app's collection feature.
+たった４つのオブジェクトとインターフェースだけにも関わらず、一見しただけでもすでに複雑だということが分かります。
+また、このAPIを用いて今後開発する機能（たとえばモバイルアプリ向けのコレクション機能）はまだ一切実装されていません。
 
-Let's take a step back. A decently complex GraphQL API will consist of many
-objects, related via multiple paths and with dozens of fields. Trying to design
-something like this all at once is a recipe for confusion and mistakes. Instead,
-you should start with a higher-level view first, focusing on just the types and
-their relations without worrying about specific fields or mutations.
-Basically think of an [Entity-Relationship model](https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model)
-but with a few GraphQL-specific bits thrown in. If we shrink our naive schema
-down like that, we end up with the following:
+一歩下がって考えてみましょう。GraphQLの複雑性は、多数のオブジェクトを含み、それらが複数の関連を介してつながり、いくつものフィールドをもつことに起因するでしょう。
+このような設計を一度に済ませようとすると、混乱や誤った設計を招きます。
+そうではなく、高いレベルから考えることからはじめ、フィールドの詳細やミューテーションは考えずに、まずは型とそれらの関連性に注目しましょう。
+
+GraphQL特有の表現が少し入りますが、基本的には[エンティティ・リレーションシップ図](https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model)を考えてください。
+素朴なスキーマ定義を凝縮すると次のようになるでしょう。
 
 ```graphql
 interface Collection {
@@ -112,41 +107,32 @@ type CollectionMembership {
 }
 ```
 
-To get this simplified representation, I took out all scalar fields, all field
-names, and all nullability information. What you're left with still looks kind
-of like GraphQL but lets you focus on higher level of the types and their
-relationships.
+このシンプルな表現ではすべての値フィールド、フィールド名、Null制約の情報を取り除いてあります。  
+残ったものはGraphQLのように見える何かに過ぎませんが、型や関連性といった高いレベルで考えさせてくれます。  
 
-*Rule #1: Always start with a high-level view of the objects and their
-relationships before you deal with specific fields.*
+*ルール #1: 詳細に取り掛かる前に、高いレベルでオブジェクトとそれらの関連性を考えることからはじめよ。* 
 
 ## Step Two: A Clean Slate
 
-Now that we have something simple to work with, we can address the major flaws
-with this design.
+それではこのシンプルな構造を用いて、当初の設計における主要な誤りをみていきましょう。
 
-As previously mentioned, our implementation defines the existence of manual and
-automatic collections, as well as the use of a collector join table. Our naive
-API design was clearly structured around our implementation, but this was a
-mistake.
+以前に述べたとおり、我々の詳細実装は、手動コレクションと自動コレクション、そしてコレクションと商品を結合するコレクターテーブルを定義しています。  
+素朴なAPIデザインは明らかに詳細実装に依存して構築されていますが、これは誤りです。
 
-The root problem with this approach is that an API operates for a different
-purpose than an implementation, and frequently at a different level of
-abstraction. In this case, our implementation has led us astray on a number of
-different fronts.
+このアプローチの根本的な問題は、APIは詳細実装とは異なる目的の振る舞いを持ち、また多くの場合は抽象度のレベルも異なることです。  
+今回のケースでは、我々の詳細実装によって多くの迷いが生じました。
 
 ### Representing `CollectionMembership`s
 
-The one that may have stood out to you already, and is hopefully fairly obvious,
-is the inclusion of the `CollectionMembership` type in the schema. The collection memberships table is
-used to represent the many-to-many relationship between products and collections.
-Now read that last sentence again: the relationship is *between products and
-collections*; from a semantic, business domain perspective, collection memberships have
-nothing to do with anything. They are an implementation detail.
+現状のスキーマに `CollectionMembership` が含まれていることに気がついたかもしれません。  
+コレクションメンバーシップテーブルは商品とコレクションの間の他対他の関連を表現するために使われます。  
+最後の部分をもう一度読んでください、「*商品とコレクションの間*」の関連とあります。
+ビジネスドメインのセマンティクスからすれば、コレクションメンバーシップは意味を持っていないのです。  
+コレクションメンバーシップは詳細実装です。
 
-This means that they don't belong in our API. Instead, our API should expose the
-actual business domain relationship to products directly. If we take out
-collection memberships, the resulting high-level design now looks like:
+これはつまり、我々のAPIに含まれないということを意味します。
+その代わりに、商品に関する実際のビジネスドメインの関係性を直接的に表現すべきです。
+コレクションメンバーシップを取り除くとすれば、我々のスキーマ設計は以下のようになります。
 
 ```graphql
 interface Collection {
@@ -168,9 +154,9 @@ type ManualCollection implements Collection {
 type AutomaticCollectionRule { }
 ```
 
-This is much better.
+かなり良くなりました。
 
-*Rule #2: Never expose implementation details in your API design.*
+*ルール #2: 詳細実装をAPI設計において表現してはならない。*
 
 ### Representing Collections
 
