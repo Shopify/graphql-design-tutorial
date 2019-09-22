@@ -327,26 +327,21 @@ NullableなBooleanを使う場合は、本当に３状態（Null/false/true）�
 
 ### Lists and Pagination
 
-Next on the chopping block is our `products` field. This one might seem safe;
-after all we already "fixed" this relation back when we removed our `CollectionMembership`
-type, but in fact there's something else wrong here.
+つぎは`products`フィールドです。これは問題ないかもしれません。
+`CollectionMembership`型を取り除くことで、我々はすでに関連に関する問題を修正しました。
+しかし、じつは他にも良くない点があります。
 
-The field as currently defined returns an array of products, but collections can
-easily have many tens of thousands of products, and trying to gather all of
-those into a single array would be incredibly expensive and inefficient. For
-situations like this, GraphQL provides lists pagination.
+本フィールドは現状では商品の配列として定義されていますが、やがてコレクションは何千という商品を含むようになり、一度にすべての商品を取得するのは驚くほどコストがかかり非効率的になるでしょう。
+このような状況のために、GraphQLはリストページネーションを提供しています。
 
-Whenever you implement a field or relation returning multiple objects, always
-ask yourself if the field should be paginated or not. How many of this object
-can there be? What quantity is considered pathological?
+複数のオブジェクトを返すフィールドや関連を実装する際は、ページネーションが必要かどうかいつも自問自答するようにしましょう。
+どのくらいの量のオブジェクトがありえるのでしょうか？どの程度であれば例外とみなせるのでしょうか？
 
-Paginating a field means you need to implement a pagination solution first.
-This tutorial uses [Connections](https://graphql.org/learn/pagination/#complete-connection-model)
-which is defined by the [Relay Connection spec](https://facebook.github.io/relay/graphql/connections.htm).
+ページネーションフィールドを利用するには、そもそもページネーションのための実装も必要となります。
+本チュートリアルでは[Relay Connection spec](https://facebook.github.io/relay/graphql/connections.htm)で定義される[Connections](https://graphql.org/learn/pagination/#complete-connection-model)を用います。
 
-In this case, paginating the products field in our design is as simple as
-changing its definition to `products: ProductConnection!`. Assuming you have
-connections implemented, your types would look like this:
+今回の場合、商品フィールドをページネーションさせるには、型の定義を`products: ProductConnection!`に変更すればよいでしょう。
+すでに実装が済んでいれば、APIデザインは次のようになります。
 
 ```graphql
 type ProductConnection {
@@ -365,8 +360,7 @@ type PageInfo {
 }
 ```
 
-
-*Rule #7: Always check whether list fields should be paginated or not.*
+*ルール #7: リストフィールドについてはページネーションの必要有無を常に確認する。*
 
 ###  Strings
 
