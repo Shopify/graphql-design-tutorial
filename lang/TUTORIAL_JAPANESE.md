@@ -210,19 +210,16 @@ REST APIとGraphQLの背後にある設計思想はまったく異なった決�
 
 ## Step Three: Adding Detail
 
-Now that we have a clean structure to model our types, we can add back our
-fields and start to work at that level of detail again.
+我々の型をモデリングするクリーンな構造を手に入れることができました。  
+もう一度、細部に視点を移して省いていたフィールドを追加していきましょう。
 
-Before we start adding detail, ask yourself if it's really needed at this
-time. Just because a database column, model property, or REST attribute may
-exist, doesn't mean it automatically needs to be added to the GraphQL schema.
+詳細情報を追加する前に、現時点においてその情報が本当に必要かどうか自問自答してください。
+なぜなら、データベースのカラムやモデルのプロパティ、RESTの属性としてその詳細情報が存在していたとしても、それがそのままGraphQLでも必要になるとは限らないからです。
 
-Exposing a schema element (field, argument, type, etc) should be driven by an
-actual need and use case. GraphQL schemas can easily be evolved by adding
-elements, but changing or removing them are breaking changes and much more
-difficult.
+スキーマの要素（フィールドや引数、型など）を公開する場合、実際の必要性やユースケースによって検討されるべきです。  
+GraphQLにおいて要素を追加するという操作は簡単ですが、それを変更したり削除することは破壊的な変更であり、難しい操作です。
 
-*Rule #4: It's easier to add fields than to remove them.*
+*ルール #4: フィールドの追加操作は削除操作よりも簡単。*
 
 ### Starting point
 
