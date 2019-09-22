@@ -274,37 +274,29 @@ type Collection implements Node {
 
 ### Rules and Subobjects
 
-We will consider the next two fields in our Collection type together: `rules`,
-and `rulesApplyDisjunctively`. The first is pretty straightforward: a list of
-rules. Do note that both the list itself and the elements of the list are marked
-as non-null: this is fine, as GraphQL does distinguish between `null` and `[]`
-and `[null]`. For manual collections, this list can be empty, but it cannot be
-null nor can it contain a null.
+コレクション内の、つぎの２つのフィールド`rules`と`rulesApplyDisjunctively`をみていきましょう。  
 
-*Protip: List-type fields are almost always non-null lists with non-null
-elements. If you want a nullable list make sure there is real semantic value in
-being able to distinguish between an empty list and a null one.*
+`rules` は単純明快にルールのリストです。リスト自身とその要素がともに非Nullと示されていることに注意してください。GraphQLは`null`と`[]`、`[null]`のすべてを区別します。  
+手動コレクションについては、これらのリストが空になるかもしれませんが、Nullにはなりませんし、要素としてNullを含むこともありません。
 
-The second field is a bit weird: it is a boolean field indicating whether the
-rules apply disjunctively or not. It is also non-null, but here we run into a
-problem: what value should this field take for manual collections? Making it
-either false or true feels misleading, but making the field nullable then makes
-it a kind of weird tri-state flag which is also awkward when dealing with
-automatic collections. While we're puzzling over this, there is one other thing
-that is worth mentioning: these two fields are obviously and intricately related.
-This is true semantically, and it's also hinted by the fact that we chose names
-with a shared prefix. Is there a way to indicate this relationship in the schema
-somehow?
+*Protip: リスト型はほとんどいつもに非Nullで非Null要素しか含みません。
+Nullableなリストを使う場合は、本当にそれが空リストとNullを区別する必要があるのか確認しましょう。*
 
-As a matter of fact, we can solve all of these problems in one fell swoop by
-deviating even further from our underlying implementation and introducing a new
-GraphQL type with no direct model equivalent: `CollectionRuleSet`. This is often
-warranted when you have a set of closely-related fields whose values and
-behaviour are linked. By grouping the two fields into their own type at the API
-level we provide a clear semantic indicator and also solve all of our problems
-around nullability: for manual collections, it is the rule-set itself which is
-null. The boolean field can remain non-null. This leads us to the following
-design:
+２つめのフィールドはすこし厄介です。`rulesApplyDisjunctively`はルールを分けて適用すべきか否かを表すBooleanフィールドです。  
+非Nullと示されていますが、ここで問題に遭遇します。手動コレクションの場合にこのフィールドは一体どの値をもつべきでしょうか。  
+trueとfalseのいずれもミスリーディングのように感じますが、かといってNullableにしたところで３状態を表現するフラグは、自動コレクションの場合に違和感を覚えます。
+
+この問題のパズルを試してみるのもいいですが、他にももうひとつ考えるに値する方法があります。  
+これら２つのフィールドは明らかに密接に関連しています。意味的にも明らかですし、同じ接頭辞を用いているという事実からも確認できます。  
+どうにかして、この関係性をスキーマで表現する方法はないでしょうか？
+
+じつ言えば、詳細実装をさらに越えて考えることで、これらの問題を一度に解決できます。  
+詳細実装には直接相当するモデルがないかもしれませんが、GraphQLに新しい`CollectionRuleSet`型を追加するのです。
+
+値や振る舞いが密接に関連するフィールドの集まりがあるときにこの手法は有効です。  
+APIレベルにおいて複数のフィールドをまとめることで、意味的に明確な指針を提供でき、さらにNullabilityまつわる問題も解決できます。  
+手動コレクションではルールセット自体がNullになり、Booleanフィールドは非Nullのままです。
+APIは次のようになります。
 
 ```graphql
 type Collection implements Node {
@@ -328,12 +320,10 @@ type CollectionRule {
 }
 ```
 
-*Protip: Like lists, boolean fields are almost always non-null. If you want a
-nullable boolean, make sure there is real semantic value in being able to
-distinguish between all three states (null/false/true) and that it doesn't
-indicate a bigger design flaw.*
+*Protip: リストのように、Booleanもほとんどいつも非Nullです。*
+NullableなBooleanを使う場合は、本当に３状態（Null/false/true）を区別する必要があるのかという点と、設計上のより大きな問題を招かないことを確認ましょう。*
 
-*Rule #6: Group closely-related fields together into subobjects.*
+*ルール #6: 密接に関連する複数のフィールドはサブオブジェクトにまとめること。*
 
 ### Lists and Pagination
 
