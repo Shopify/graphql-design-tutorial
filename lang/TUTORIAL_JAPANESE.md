@@ -364,33 +364,28 @@ type PageInfo {
 
 ###  Strings
 
-Next up is the `title` field. This one is legitimately fine the way it is. It's
-a simple string, and it's marked non-null because all collections must have a
-title.
+次に登場するのは`title`フィールドです。これは本当に現状のままで問題ないでしょう。  
+すべてのコレクションはタイトルを持っているはずなので、非Nullのシンプルな文字列型です。
 
-*Protip: As with booleans and lists, it's worth noting that GraphQL does
-distinguish between empty strings (`""`) and nulls (`null`), so if you need a
-nullable string make sure there is a legitimate semantic difference between
-not-present (`null`) and present-but-empty (`""`). You can often think of empty
-strings as meaning "applicable, but not populated", and null strings meaning
-"not applicable".*
+*Protip: Booleanやリストと同様に、GraphQLが空文字列(`""`)とNull(`null`)を区別することに注意しましょう。
+NullableなStringを使う場合は、存在しないこと(`null`)と、存在しているが空文字列(`""`)の状態について意味的に本当に差異があるか確認ましょう。*
+空文字列を”許容可能だが値が埋められていない”ものとし、Nullを”許容不可能”なものと考えることができます*
 
 ### IDs and Relations
 
-Now we come to the `imageId` field. This field is a classic example of what
-happens when you try and apply REST designs to GraphQL. In REST APIs it's
-pretty common to include the IDs of other objects in your response as a way to
-link together those objects, but this is a major anti-pattern in GraphQL.
-Instead of providing an ID, and forcing the client to do another round-trip to
-get any information on the object, we should just include the object directly
-into the graph - that's what GraphQL is for after all. In REST APIs this pattern
-often isn't practical, since it inflates the size of the response significantly
-when the included objects are large. However, this works fine in GraphQL because
-every field must be explicitly queried or the server won't return it.
+さて、`imageId`フィールドに取り掛かりましょう。
+このフィールドは、RESTの思想をGraphQLに適用しようとしたときに何がおこるかを示す典型的な例です。
+REST APIでは、オブジェクト同士を結びつける手段のひとつとして、レスポンスの中に他のオブジェクトのIDを含める方法が一般的です。
+しかし、これはGraphQLにおける代表的なアンチパターンです。
 
-As a general rule, the only ID fields in your design should be the IDs of the
-object itself. Any time you have some other ID field, it should probably be an
-object reference instead. Applying this to our schema so far, we get:
+IDを与えて、対象となるオブジェクトを取得するための別のリクエストを強いる代わりに、オブジェクトをグラフに直接含めるべきです。
+詰まるところ、これこそがGraphQLが求めるものです。  
+含まれるオブジェクトが大きい場合にレスポンスのサイズも膨れ上がるため、REST APIにおいてこの設計はしばし実用的ではありません。  
+しかしGraphQLでは、フィールドを明示的にクエリで要求しない限りはサーバーは何も行わないため、この設計がうまくいくのです。
+
+一般的な指針として、IDフィールドはオブジェクト自身の識別子を表す場合のみ使うべきです。  
+他のオブジェクトIDをフィールドとしてもつ場合、そのオブジェクトへ参照であるべきかもしれません。  
+この指針をこれまでの我々のスキーマに適用すると、次のようになります。
 
 ```graphql
 type Collection implements Node {
@@ -418,7 +413,7 @@ type CollectionRule {
 }
 ```
 
-*Rule #8: Always use object references instead of ID fields.*
+*ルール #8: IDフィールドの代わりとして常にオブジェクトの参照を使うこと。*
 
 ### Naming and Scalars
 
