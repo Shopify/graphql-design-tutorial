@@ -223,7 +223,7 @@ GraphQLにおいて要素を追加するという操作は簡単ですが、そ�
 
 ### Starting point
 
-Restoring our naive fields adjusted for our new structure, we get:
+素朴な設計で存在していたフィールドを、我々の新しい構造に戻すと次のスキーマを得ます。
 
 ```graphql
 type Collection {
@@ -243,35 +243,34 @@ type CollectionRule {
 }
 ```
 
-Now we have a whole new host of design problems to resolve. We'll work through
-the fields in order top to bottom, fixing things as we go.
+これが我々が解決すべき新しい問題です。
+上から順にフィールドをみていき、ひとつずつ解決していきましょう。
 
 ### IDs and the `Node` Interface
 
-The very first field in our Collection type is an ID field, which is fine and
-normal; this ID is what we'll need to use to identify our collections throughout
-the API, in particular when performing actions like modifying or deleting them.
-However there is one piece missing from this part of our design: the `Node`
-interface. This is a very commonly-used interface that already exists in most
-schemas and looks like this:
+まずはじめに、コレクション型のIDフィールドに注目します。  
+良さそうに見えます。IDはAPIを通してとくに変更や削除操作を行う際に、コレクションを特定するために使われます。
+
+しかし、我々の設計にはひとつ欠けているものがあります。それは`Node`インターフェースです。  
+`Node`は既に多くのスキーマでひろく利用されているインターフェースで、以下ように与えられます。
+
 ```graphql
 interface Node {
   id: ID!
 }
 ```
-It hints to the client that this object is persisted and retrievable by the
-given ID, which allows the client to accurately and efficiently manage local
-caches and other tricks. Most of your major identifiable business objects
-(e.g. products, collections, etc) should implement `Node`.
 
-The beginning of our design now just looks like:
+これはクライアントに対して、本オブジェクトは永続化されていてIDを用いて取得できることを知らせるヒントであり、クライアントは正確かつ効率的にローカルキャッシュを管理することができます。  
+特定可能な主要なビジネスオブジェクト（例えば商品やコレクションなど）は`Node`インターフェースを実装するべきです。
+
+APIデザインは次のようになります。
 ```graphql
 type Collection implements Node {
   id: ID!
 }
 ```
 
-*Rule #5: Major business-object types should always implement `Node`.*
+*ルール #5: 主要なビジネスオブジェクト型は`Node`インターフェースを実装する。*
 
 ### Rules and Subobjects
 
