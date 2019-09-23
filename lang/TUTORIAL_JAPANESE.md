@@ -562,33 +562,28 @@ GraphQLはクライアントから明示的に要求されたものだけを返�
 
 ## Step Five: Mutations
 
-The final missing piece of our GraphQL schema design is the ability to actually
-change values: creating, updating, and deleting collections and related pieces.
-As with the readable portion of the schema we should start with a high-level
-view: in this case, of just the various mutations we will want to implement,
-without worrying about their specific inputs or outputs. Naively we might follow
-the CRUD paradigm and have just `create`, `delete`, and `update` mutations.
-While this is a decent starting place, it is insufficient for a proper GraphQL
-API.
+我々のGraphQLスキーマに足りていない最後のピースはデータを変更する機能です。
+コレクションを追加、変更したり、コレクションと関連するオブジェクトを削除するといった操作です。
+スキーマのクエリ部分と同様に、高いレベルから見ていくべきです。
+ここでは、個々の入出力にとらわれず、まずはどのような種類のmutationが必要か考えてみましょう。
+素朴にCRUD操作のパラダイムに従い、`create`、`delete`、そして`update`操作のmutationを設けてみます。
+これは議論を始めるにはちょうど良いものの、正しいGraphQL APIとしては不十分です。
 
 ### Separate Logical Actions
 
-The first thing we might notice if we were to stick to just CRUD is that our
-`update` mutation quickly becomes massive, responsible not just for updating
-simple scalar values like title but also for performing complex actions like
-publishing/unpublishing, adding/removing/reordering the products in the
-collection, changing the rules for automatic collections, etc. This makes it
-hard to implement on the server and hard to reason about for the client.
-Instead, we can take advantage of GraphQL to split it apart into more granular,
-logical actions. As a very first pass, we can split out publish/unpublish
-resulting in the following mutation list:
+CRUDに従おうとすると、すぐに`update`が巨大になるということにまず気付くと思います。
+タイトルのようなシンプルなスカラー値を更新するだけではなく、コレクションの公開や非公開、商品の追加/削除/並べ替え操作、自動コレクションのルールの変更といったあらゆる複雑な操作がupdateの責任範囲となります。
+サーバーは実装が困難になり、クライアントは論理的に考えて利用することが難しくなります。
+対案として、`update`操作を論理的に細かい粒度に分解できるというGraphQLの利点を活かすことができます。
+手始めに公開・非公開の操作を切り出すことで、以下のmutationのリストを得ます。
+
 - create
 - delete
 - update
 - publish
 - unpublish
 
-*Rule #14: Write separate mutations for separate logical actions on a resource.*
+*ルール #14: リソースに対するロジックの異なる操作にはそれぞれmutationを用意すること。*
 
 ### Manipulating Relationships
 
