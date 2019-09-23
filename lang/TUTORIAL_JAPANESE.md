@@ -444,28 +444,29 @@ GraphQLは標準で十分なスカラー型（`String`, `Int`, `Boolean`など�
 
 ### Pagination Again
 
-That covers all of the fields in our core `Collection` type. The next object is
-`CollectionRuleSet`, which is quite simple. The only question here is whether or
-not the list of rules should be paginated. In this case the existing array
-actually makes sense; paginating the list of rules would be overkill. Most
-collections will only have a handful of rules, and there isn't a good use case
-for a collection to have a large rule set. Even a dozen rules is probably an
-indicator that you need to rethink that collection, or should just be manually
-adding products.
+これで`Collection`型のすべてのフィールドを確認しました。
+つぎのオブジェクトは非常にシンプルな`CollectionRuleSet`です。  
+
+唯一の懸念は、リストをページネーションするかどうかという点です。
+この場合には、ページネーションは手の込みすぎた実装でしょうから、現状のリスト定義のほうが適しています。
+ほとんどのコレクションは片手で数えられるほどのルールしか含むことはないですし、ひとつのコレクションに対して膨大なルールを設けることは好ましいユースケースではありません。
+
+たとえ数十のルールだとしても、それはコレクションの定義を考え直す兆候かもしれません。
+あるいは単に手動で商品を追加すれば済む話かもしれません。
 
 ### Enums
 
-This brings us to the final type in our schema, `CollectionRule`. Each rule
-consists of a column to match on (e.g. product title), a type of relation (e.g.
-equality) and an actual value to use (e.g. "Boots") which is confusingly called
-`condition`. That last field can be renamed, and so should `column`; column is
-very database-specific terminology, and we're working in GraphQL. `field` is
-probably a better choice.
+最後に残った型は`CollectionRule`です。
+それぞれのルールは、フィルタ対象のカラム（例えば商品名）、比較方法（例えば完全一致）、そして`condition`と呼ばれる紛らわしい比較対象値（例えば"Boots"）によって構成されます。
 
-As far as types go, both `field` and `relation` are probably implemented
-internally as enumerations (assuming your language of choice even has
-enumerations). Fortunately GraphQL has enums as well, so we can convert those
-two fields to enums. Our completed schema design now looks like this:
+`condition`と`column`のフィールド名は変更されて然るべきです。
+`column`という名前はデータベース固有の語用ですが、我々が考えているのはGraphQLです。  
+`field`のほうが良い選択でしょう。
+
+型に着目してみると、`field`と`relation`は内部的には列挙型で実装されているかもしれません（実装言語が列挙型を提供していると想定します。）  
+幸いなことにGraphQLもまた列挙型をもっていますので、それら２つのフィールドを列挙型に変更しましょう。
+
+完成したスキーマは以下のようになります。
 
 ```graphql
 type Collection implements Node {
@@ -509,7 +510,7 @@ enum CollectionRuleRelation {
 }
 ```
 
-*Rule #11: Use enums for fields which can only take a specific set of values.*
+*ルール #11: 特定の値しかとることがないなら列挙型を使うこと。*
 
 ## Step Four: Business Logic
 
