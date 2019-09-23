@@ -514,64 +514,51 @@ enum CollectionRuleRelation {
 
 ## Step Four: Business Logic
 
-We now have a minimal but well-designed GraphQL API for collections. There is a
-lot of detail to collections that we haven't dealt with - any real
-implementation of this feature would need a lot more fields to deal with things
-like product sort order, publishing, etc. - but as a rule those fields will all
-follow the same design patterns laid out here. However, there are still a few
-things which bear looking at in more detail.
+さて、これでコレクションに対する最小かつ良く設計されたGraphQL APIが得られました。  
+まだ手を付けていないコレクションの詳細部分がありますが（商品の並び順や公開・非公開のの管理のためにまだ多くのフィールドが必要でしょう）、それら全てが等しく従うであろう設計パターンはすでに見てきました。  
+しかしながら、詳しく検討すべき事項がまだ少しだけあります。
 
-For this section, it is most convenient to start with a motivating use case from
-the hypothetical client of our API. Let us therefore imagine that the client
-developer we have been working with needs to know something very specific:
-whether a given product is a member of a collection or not. Of course, this is
-something that the client can already answer with our existing API: we expose
-the complete set of products in a collection, so the client simply has to
-iterate through, looking for the product they care about.
+本節については、我々のAPIの仮想的なクライアントにおけるユースケースから議論を始めると一番都合が良いです。  
+以前から一緒に開発に取り組んでいるクライアント側開発者が、ある商品があるコレクションに所属しているかどうかを知る必要があるとしましょう。  
+もちろんクライアント側は既存のAPIを用いてこの問いに答えを得ることができます。
+我々はコレクションに含まれる全ての商品のリストを公開しているので、クライアントは単にリストを走査すれば済むのです。
 
-This solution has two problems though. The first, obvious problem is that it's
-inefficient; collections can contain millions of products, and having the client
-fetch and iterate through them all would be extremely slow. The second, bigger
-problem, is that it requires the client to write code. This last point is a
-critical piece of design philosophy: the server should always be the single
-source of truth for any business logic. An API almost always exists to serve
-more than one client, and if each of those clients has to implement the same
-logic then you've effectively got code duplication, with all the extra work and
-room for error which that entails.
+しかしこの状況には２つの問題が潜んでいます。  
+１つは、これは明確ですが、非効率だという点です。
+コレクションは何万もの商品を含むかもしれず、クライアントが全てを取得してひとつずつ調べる方法は大変な時間を必要とします。  
+２つ目は、こちらのほうが大きな問題です、クライアントに実装を要求するという点です。
+これは設計哲学における最も重要なポイントのひとつで、つねにサーバーこそが唯一の正しいビジネスロジックの情報源であるべきです。
+ほとんどの場合でAPIは複数のクライアントに対して提供されます。
+もしそれぞれのクライアントが同じロジックを実装しなければならないとしたら、それはコードの重複を生み、不必要なタスクとエラーが発生させる余地を伴います。
 
-*Rule #12: The API should provide business logic, not just data. Complex
-calculations should be done on the server, in one place, not on the client, in
-many places.*
+*ルール #12: APIはデータだけではなくビジネスロジックを提供すべき。
+複雑な計算はサーバーで為されるべきで、複数のクライアントではない。*
 
-Back to our client use-case, the best answer here is to provide a new field
-specifically dedicated to solving this problem. Practically, this looks like:
+クライアントのユースケースに戻りましょう。ここでの最適解は、商品の所属有無判定を解決する専用のフィールドを設けることです。
+具体的にはこのような定義になるでしょう。
+
 ```graphql
 type Collection implements Node {
   # ...
   hasProduct(id: ID!): Bool!
 }
 ```
-This field takes the ID of a product and returns a boolean based on the server
-determining if a product is in the collection or not. The fact that this sort-of
-duplicates the data from the existing `products` field is irrelevant. GraphQL
-returns only what clients explicitly ask for, so unlike REST it does not cost us
-anything to add a bunch of secondary fields. The client doesn't have to write
-any code beyond querying an additional field, and the total bandwidth used is a
-single ID plus a single boolean.
 
-One follow-up warning though: just because we're providing business logic in a
-situation does not mean we don't have to provide the raw data too. Clients
-should be able to do the business logic themselves, if they have to. You can’t
-predict all of the logic a client is going to want, and there isn't always an
-easy channel for clients to ask for additional fields (though you should strive
-to ensure such a channel exists as much as possible).
+このフィールドは商品IDを受け取り、サーバーが判定したコレクションに所属しているか否かを表すBoolean値を返します。
+このようなフィールドが既存の商品フィールドから得られる情報を重複させているという事項は関係ありません。
+GraphQLはクライアントから明示的に要求されたものだけを返します。
+ですから、RESTとは異なり、二次的なフィールドを追加することは一切のコストを増加させません。
+クライアントは新しいフィールドをクエリする以外にはいかなるコードも書く必要がありませんし、使用される転送帯域もただ一つのIDとboolean値だけです。
 
-*Rule #13: Provide the raw data too, even when there's business logic around it.*
+一点付け加えるとすれば、ビジネスロジックを提供しているからといって、元々のデータを提供しなくて済むことにはならないという点です。
+クライアントは、必要があれば、彼ら自身でビジネスロジックを実装できるべきです。
+クライアントが要求するであろうビジネスロジックをすべて予見するとこはできませんし、クライアントに追加すべきフィールドを尋ねる簡単な手段があることも期待できません（それでも、可能な限りそのような手段がないか探す努力をすべきですが。）
 
-Finally, don't let business-logic fields affect the overall shape of the API.
-The business domain data is still the core model. If you're finding the business
-logic doesn't really fit, then that's a sign that maybe your underlying model
-isn't right.
+*ルール #13: ビジネスロジックによって済まされる場合でも、元データを提供すること。*
+
+最後に、ビジネスロジックを提供するフィールドがAPI全体の型に影響を与えないように注意しましょう。  
+ビジネスドメインのデータは依然としてコアモデルだということに変わりはありません。
+もしビジネスロジックのフィールドがどうしてもフィットしないと感じているなら、それは背後にあるモデル自体が正しくないことを示すサインかもしれません。
 
 ## Step Five: Mutations
 
