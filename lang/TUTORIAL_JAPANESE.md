@@ -417,37 +417,30 @@ type CollectionRule {
 
 ### Naming and Scalars
 
-The last field in our simple `Collection` type is `bodyHtml`. To a user who is
-unfamiliar with the way that collections were implemented, it's not entirely
-obvious what this field is for; it's the body description of the specific
-collection. The first thing we can do to make this API better is just to rename
-it to `description`, which is a much clearer name.
+`Collection`型の最後のフィールドは`bodyHtml`です。  
+これはコレクションに対する説明文です。
+コレクションの詳細実装に詳しくない人間にとって、このフィールドがどういった目的で存在しているのか明らかではありません。
+ 
+このAPIの改善としてまずはじめにできることは、フィールド名を`description`に変えて意味を明確にすることです。
 
-*Rule #9: Choose field names based on what makes sense, not based on the
-implementation or what the field is called in legacy APIs.*
+*ルール #9: 歴史的経緯や詳細実装ではなく、意味のある概念に基づいてフィールド名を選ぶこと。*
 
-Next, we can make it non-nullable. As we talked about with the title field, it
-doesn't make sense to distinguish between the field being null and simply being
-an empty string, so we don't expose that in the API. Even if your database
-schema does allow records to have a null value for this column, we can hide that
-at the implementation layer.
+つぎにNullableを止めることができます。
+タイトルフィールドでも議論したとおり、Nullと空文字を区別する意味がないため、APIにおいてNullを許容しません。  
+たとえデータベーススキーマが当該のカラムにNullを許容していたとしても、それは詳細実装のレイヤに留めておくことができます。
 
-Finally, we need to consider if `String` is actually the right type for this
-field. GraphQL provides a decent set of built-in scalar types (`String`, `Int`,
-`Boolean`, etc) but it also lets you define your own, and this is a prime use
-case for that feature. Most schemas define their own set of additional scalars
-depending on their use cases. These provide additional context and semantic
-value for clients. In this case, it probably makes sense to define a custom
-`HTML` scalar for use here (and potentially elsewhere) when the string in
-question must be valid HTML.
+最後に、`String`が実際に正しい型なのかどうか考える必要があります。  
+GraphQLは標準で十分なスカラー型（`String`, `Int`, `Boolean`など）を提供していますが、一方でユーザ自身でカスタムスカラー型を定義することも可能にしています。
+本ケースはまさにその主要な利用場面です。
 
-Whenever you're adding a scalar field, it's worth checking your existing list of
-custom scalars to see if one of them would be a better fit. If you're adding a
-field and you think a new custom scalar would be appropriate, it's worth talking
-it over with your team to make sure you're capturing the right concept.
+多くのGraphQLスキーマでは。ユースケースに応じて独自のカスタムスカラー型を定義しています。  
+カスタムスカラー型はコンテキストや意味づけを与え、それらをクライアントに伝えます。
+今回の場合では、文字列が有効なHTMLであることを示すために、カスタムスカラー型`HTML`を定義すると良いでしょう。
 
-*Rule #10: Use custom scalar types when you're exposing something with specific
-semantic value.*
+カスタムスカラー型を追加するときはいつでも、既存のカスタムスカラー型を用いてより適切に目的を達成できるかどうかを確認しましょう。  
+カスタムスカラー型を追加しょうとしているとき、またその型が適切だと考えているときでも、チーム内でそれが正しい概念を表現しているかどうか話し合うことをおすすめします。
+
+*ルール #10: 特定の意味を持った値を表現する場合にはカスタムスカラー型を使うこと。*
 
 ### Pagination Again
 
