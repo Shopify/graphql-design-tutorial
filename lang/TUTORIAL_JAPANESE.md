@@ -618,8 +618,7 @@ mutationにおいても類似する問題に対処しなければなりません
 
 *ルール #15: 関連に対する操作は複雑で、ひとつの便利な指針で語ることはできない。*
 
- If you stir all of this together, for collections we end up with the following
- list of mutations:
+以上の議論を踏まえると、コレクションに対するmutationは以下のようになるでしょう。
 - create
 - delete
 - update
@@ -629,17 +628,15 @@ mutationにおいても類似する問題に対処しなければなりません
 - removeProducts
 - reorderProducts
 
-Products we split into their own mutations, because the relationship is large
-and ordered. Rules we left inline because the relationship is small, and rules
-are sufficiently minor to not have IDs.
+商品については関連の数が多く、順序づけもなされているため、独自のmutationを切り出しました。
+ルールはインライン（リスト埋め込み）のままとしました。
+なぜなら、関連の数が少なく、IDを持たせなくて済む程度にマイナーな概念だからです。
 
-Finally, you may note our product mutations act on sets of products, for example
-`addProducts` and not `addProduct`. This is simply a convenience for the client,
-since the common use case when manipulating this relationship will be to add,
-remove, or reorder more than one product at a time.
+最後に、商品に対する操作の名前が複数形（`addProduct`ではなく`addProducts`）になっていることに触れておきます。
+これは単純にクライアント側の利便性を考慮しています。
+一般的なユースケースを考えた場合、商品に対する操作は単一の商品ではなく、複数のものを対象として追加、削除、並べ替えを実行することになるからです。
 
-*Rule #16: When writing separate mutations for relationships, consider whether
- it would be useful for the mutations to operate on multiple elements at once.*
+*ルール #16: 関連に対するmutationを分けて実装するときには、一度に複数の要素に対して実行することが便利かどうか検討すること。*
 
 ### Input: Structure, Part 1
 
