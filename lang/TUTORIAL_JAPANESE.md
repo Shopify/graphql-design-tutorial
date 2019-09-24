@@ -640,29 +640,26 @@ mutationにおいても類似する問題に対処しなければなりません
 
 ### Input: Structure, Part 1
 
-Now that we know which mutations we want to write, we get to figure out what
-their input structures look like. If you've been browsing any of the real
-production schemas that are publicly available, you may have noticed that many
-mutations define a single global `Input` type to hold all of their arguments:
-this pattern was a requirement of some legacy clients but is no longer needed
-for new code; we can ignore it.
+さて、これで我々がどのようなmutationが必要なのかが分かりました。
+つぎは入力の型を明らかにしていきます。
+一般に公開され利用可能な本物のスキーマを見たことがあれば、多くのmutationが、全ての引数を内包したグローバルな`Input`型をもっていることに気がついたかもしれません。
+このパターンはいつかのレガシーなクライアントで必要とされた要件でしたが、いまでは不要になったため考慮しないで構いません。
 
-For many simple mutations, an ID or a handful of IDs are all that is needed,
-making this step quite simple. Among collections, we can quickly knock out the
-following mutation arguments:
-- `delete`, `publish` and `unpublish` all simply need a single collection ID
-- `addProducts` and `removeProducts` both need the collection ID as well as a
-  list of product IDs
+シンプルなmutationに対しては、ひとつのIDか片手で数えられる程度のIDがあれば十分です。
+簡単に済ませてしまいましょう。
+コレクションに関して言えば、以下のmutation引数に関してはすぐに答えが出せます。
 
-This leaves us with only three remaining "complicated" inputs to design:
+- `delete`と`publish`、`unpublish`はすべて単純にひとつのコレクションのIDが必要
+- `addProducts`と`removeProducts`はどちらもコレクションのIDに加えて商品のIDリストが必要
+
+残った他の３つの"複雑な"入力に対処していきます。
 - create
 - update
 - reorderProducts
 
-Let's start with create. A very naive input might look kind of like our original
-naive collection model when we started, but we can already do better than that.
-Based on our final collection model and the discussion of relationships above,
-we can start with something like this:
+createからです。
+極めて素朴な入力の型は、我々が当初考えていた素朴なコレクションモデルのようなものになるかもしれません。しかし我々はすでにより良い方法を知っています。
+最終的なコレクションの型と、関連に関する先の議論をもとにして考えると、以下のような案から考えていくことができます。
 
 ```graphql
 type Mutation {
@@ -686,15 +683,13 @@ input CollectionRuleInput {
 }
 ```
 
-First a quick note on naming: you'll notice that we named all of our mutations
-in the form `collection<Action>` rather than the more naturally-English
-`<action>Collection`. Unfortunately, GraphQL does not provide a method for
-grouping or otherwise organizing mutations, so we are forced into
-alphabetization as a workaround. Putting the core type first ensures that all of
-the related mutations group together in the final list.
+まずは命名について簡単にみていきます。
+すべてのmutationに対して、自然な英語では`<action>Collection`であるはずが、あえて`collection<Action>`の形式の名前をつけています。
+残念ながら、GraphQLはmutationをまとめたり整理するための手立てを提供しません。
+そこで、ワークアラウンドとして無理やりアルファベット順に並べているのです。
+対象となる型名を接頭辞とすることで、関係するmutationをまとめて並べることができます。
 
-*Rule #17: Prefix mutation names with the object they are mutating for
- alphabetical grouping (e.g. use `orderCancel` instead of `cancelOrder`).*
+*ルール #17: アルファベット順でグループ化するために、mutationの接頭辞に操作対象のオブジェクト名を用いること（例えば`cancelOrder`ではなく`orderCancel`とする。）*
 
 ### Input: Scalars
 
