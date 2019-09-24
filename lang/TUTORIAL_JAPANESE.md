@@ -587,52 +587,36 @@ CRUDに従おうとすると、すぐに`update`が巨大になるというこ�
 
 ### Manipulating Relationships
 
-The `update` mutation still has far too many responsibilities so it makes sense
-to continue splitting it up, but we will deal with these actions separately
-since they're worth thinking about from another dimension as well: the
-manipulation of object relationships (e.g. one-to-many, many-to-many). We've
-already considered the use of IDs vs embedding, and the use of pagination vs
-arrays in the read API, and there are some similar issues to deal with when
-mutating these relationships.
+`update` mutationは依然として大きすぎる責務を負っているため、引き続き分解を進めましょう。
+とはいえ、分解した操作もそれぞれ別の次元（例えば１対多や多対多の関係性に関する操作）から考えてみる価値があるので、後ほど順に見ていきます。
+我々はすでにIDとオブジェクトの埋め込みの使い方、あるいはページネーションとリストの使い分けについてみてきました。
+mutationにおいても類似する問題に対処しなければなりません。
 
-For the relationship between products and collections, there are a couple of
-styles we could broadly consider:
-- Embedding the entire relationship (e.g. `products: [ProductInput!]!`) into the
-  update mutation is the CRUD-style default, but of course it quickly becomes
-  inefficient when the list is large.
-- Embedding "delta" fields (e.g. `productsToAdd: [ID!]!` and
-  `productsToRemove: [ID!]!`) into the update mutation is more efficient since
-  only the changed IDs need to be specified instead of the entire list, but it
-  still keeps the actions tied together.
-- Splitting it up entirely into separate mutations (`addProduct`,
-  `removeProduct`, etc.) is the most powerful and flexible but also the most
-  work.
+商品とコレクションの関連については、いくつかの検討可能な設計パターンがあります。
+- update mutationに関連全体（例えば`products: [ProductInput!]!`）を埋め込むCRUDスタイルの方法。
+しかし、当然ながら関連のリストが大きくなるにつれて間もなく非効率になる。
+- “差分”フィールド（例えば`productsToAdd: [ID!]!`と`andproductsToRemove: [ID!]!`）をupdate mutationに埋め込む方法。
+変更のあるIDだけを必要とするため関連全体の場合よりも効率的。しかし依然として複数の操作をひとつにまとめてしまっている。
+- 別々のmutation（`addProduct`や`removeProduct`など）に分ける方法。柔軟、効率的で、最もうまくいく。
 
-The last option is generally the safest call, especially since mutations like
-this will usually be distinct logical actions anyway. However, there are a lot
-of factors to consider:
-- Is the relationship large or paginated? If so, embedding the entire list is
-  definitely impractical, however either delta fields or separate mutations
-  could still work. If the relationship is always small though (especially if
-  it's one-to-one), embedding may be the simplest choice.
-- Is the relationship ordered? The product-collection relationship is ordered,
-  and permits manual reordering. Order is naturally supported by the embedded
-  list or by separate mutations (you can add a `reorderProducts` mutation)
-  but isn't an option for delta fields.
-- Is the relationship mandatory? Products and collections can both exist on
-  their own outside of the relationship, with their own create/delete lifecycle.
-  If the relationship were mandatory (i.e. products must be in a collection)
-  then this would strongly suggest separate mutations because the action would
-  actually be to *create* a product, not just to update the relationship.
-- Do both sides have IDs? The collection-rule relationship is mandatory (rules
-  can't exist without collections) but rules don't even have IDs; they are
-  clearly subservient to their collection, and since the relationship is also
-  small, embedding the list is actually not a bad choice here. Anything else
-  would require rules to be individually identifiable and that feels like
-  overkill.
+本ケースのようなmutationは実際には異なる個別のロジックを持つため、最後の選択肢が一般に最も安全だとされます。
+しかし、考慮すべき要素がいくつもあります。
+- 関連のリストは巨大であったり、ページネーションされていますか？
+  もしそうなら、リスト全体を埋め込む方法は非現実的です。
+  しかし差分埋め込みやmutationの分割といった方法はうまくいくかもしれません。
+  もし関連のリストがいつも小さいと仮定できるなら（特に１対１の場合）、リスト埋め込みの方法が最もシンプルでしょう。
+- 関連のリストは順序づけされていますか？
+  商品ーコレクションの関連は順序づけされていて、手動で並び替えることが許されていました。
+  順序づけは、リスト埋め込みやmutation分割（例えば`reorderProducts`を追加できます）では自然な方法で実現できますが、差分埋め込みの場合には困難です。
+- 関連は必須ですか？商品とコレクションは関連とは別に存在することができ、それぞれが独自の作成/削除のライフサイクルをもっています。
+  もし関連が必須があれば（例えば商品はいずれかのコレクションに所属している必要がある、など）、mutation分割を強く推めます。
+  なぜなら、その操作は実際に商品を*作成する*はずで、関連の更新にとどまらないはずです。
+- 関連をもつ双方のオブジェクトがもちますか？
+  コレクションールールの関連は必須（ルールをはコレクションから離れて存在できません）ですが、ルールはIDすらもちません。
+  ルールは明らかにコレクションに従属していますし、関連の数も小さいので、ここではリスト埋め込みが悪くない選択です。
+  他のオブジェクトがルールを一意に識別する必要があるかもしれませんが、それはやりすぎのように感じられます。
 
-*Rule #15: Mutating relationships is really complicated and not easily
- summarized into a snappy rule.*
+*ルール #15: 関連に対する操作は複雑で、ひとつの便利な指針で語ることはできない。*
 
  If you stir all of this together, for collections we end up with the following
  list of mutations:
