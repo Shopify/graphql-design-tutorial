@@ -704,39 +704,35 @@ GraphQLの草案は素朴なものよりもかなり良くなっていますが�
 
 *ルール #18: mutation処理を遂行するうえで意味的に本当に必要である場合に限り、入力フィールドを必須とすること。*
 
-The other issue with `description` is its type; this may seem counter-intuitive
-since it is already strongly-typed (`HTML` instead of `String`) and we've been
-all about strong typing so far. But again, inputs behave a little differently.
-Validation of strong typing on input happens at the GraphQL layer before any
-"userspace" code gets run, which means that realistically clients have to deal
-with two layers of errors: GraphQL-layer validation errors, and business-layer
-validation errors (for example something like: you've reached the limit of
-collections you can create with your current storage). In order to simplify this
-process, we intentionally weakly type input fields when it might be difficult
-for the client to validate up-front. This lets the business-logic side handle
-all of the validation, and lets the client only deal with errors from one spot.
+`description`に関するもうひとつの問題はその型です。
+この問題は直感に反するかもしれません。
+`description`はすでに強い型付け（`String`ではなく`HTML`）がされており、またこれまで強い型付けを議論してきました。
+しかし、繰り返しになりますが、入力は出力と少し異なる振る舞いを行うのです。
 
-*Rule #19: Use weaker types for inputs (e.g. `String` instead of `Email`) when
- the format is unambiguous and client-side validation is complex. This lets the
- server run all non-trivial validations at once and return the errors in a
- single place in a single format, simplifying the client.*
+強い型付けに対する値の検証は、ユーザ空間のコードが実行されるよりも前でに、GraphQLのレイヤーで実行されます。
+つまり、クライアントはGraphQLレイヤーにおける検証とビジネスドメインレイヤーにおける検証の両方で発生するエラーをそれぞれ対応する必要があるということです。
+（例えば、現状の許容ストレージ内で生成できるコレクションの上限に達した場合など）
 
-It is important to note, though, that this is not an invitation to weakly-type
-all your inputs. We still use strongly-typed enums for the `field` and
-`relation` values on our rule input, and we would still use strong typing for
-certain other inputs like `DateTime`s if we had any in this example. The key
-differentiating factors are the complexity of client-side validation and the
-ambiguity of the format. HTML is a well-defined, unambiguous specification, but
-is quite complex to validate. On the other hand, there are hundreds of ways to
-represent a date or time as a string, all of them reasonably simple, so it
-benefits from a strong scalar type to specify which format we expect.
+処理を簡単にするために、クライアント側で事前に検証を行うことが難しい場合には、我々は入力対して意図的に弱い型付けを行います。
+これにより、ビジネスロジックレイヤーがすべての検証を行い、クライアントも一箇所から発生するエラーだけに対処するだけで済みます。
 
-*Rule #20: Use stronger types for inputs (e.g. `DateTime` instead of `String`)
- when the format may be ambiguous and client-side validation is simple. This
- provides clarity and encourages clients to use stricter input controls (e.g. a
- date-picker widget instead of a free-text field).*
+*ルール #19: フォーマットが曖昧であったり、クライアント側の検証が複雑な場合には、入力に対して弱い型付け（`Email`ではなく`String`）を行うこと。
+ これによりサーバーは一度にすべての検証を実行し、単一のフォーマットでエラーを報告することになり、結果としてクライアント非常にシンプルになる。*
+
+これはすべての入力に対して弱い型付けを推奨している訳ではないことに注意してください。
+我々はroleの入力における`field`と`relation`フィールドに強い型付けをもったenumを用いています。
+例えば`DateTime`のような特定の値入力に対しても、強い型付けを使うことがあるでしょう。
+
+違いを生む要因はクライアント側検証の複雑さとフィーマットの曖昧さです。
+HTMLはうまく定義されていて、明瞭な仕様がありますが、検証を行うには極めて複雑です。
+他方で日時や日付を表現する文字列には何百の表現方法があり、それらすべてが適切にシンプルなフォーマットをもっています。
+したがって、サーバーが期待するフォーマットを指定するために強い型付けを行うと便利です。
+
+*ルール #20: フォーマットが曖昧でクライアント側検証がシンプルな場合は強い型付け（`String`ではなく`DateTime`）を行うこと。
+ 型付けにより明確さを得られ、クライアントにより厳しい入力値管理（フリーテキスト入力ではなくカレンダーウィジェットを用いる）を促します。*
 
 ### Input: Structure, Part 2
+
 
 Continuing on to the update mutation, it might look something like this:
 
