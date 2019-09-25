@@ -733,8 +733,7 @@ HTMLはうまく定義されていて、明瞭な仕様がありますが、検�
 
 ### Input: Structure, Part 2
 
-
-Continuing on to the update mutation, it might look something like this:
+つづいてupdate操作をみていきます。
 
 ```graphql
 type Mutation {
@@ -744,24 +743,21 @@ type Mutation {
 }
 ```
 
-You'll note that this is very similar to our create mutation, with two
-differences: a `collectionId` argument was added, which determines which
-collection to update, and `title` is no longer required since the collection
-must already have one. Ignoring the title's required status for a moment, our
-example mutations have four duplicate arguments, and a complete collections
-model would include quite a few more.
+二つの点を除いて、updateのmutationがcreateに非常に似ていることに気付いたかもしれません。
+更新対象のコレクションを示す引数`collectionId`が追加され、またコレクションは既に`title`を持っているため必須制約が外れました。
+`title`を必須制約を無視すれば、これら２つのmutationは共通する４つの引数を持ち、完全なコレクションモデルはさらに多くの引数を含むでしょう。
 
-While there are some arguments for leaving these mutations as-is, we have
-decided that situations like this call for DRYing up the common portions of the
-arguments, even at the cost of requiredness. This has a couple of advantages:
-- We end up with a single input object representing the concept of a collection
-  and mirroring the single `Collection` type our schema already has.
-- Clients can share code between their create and update forms (a common
-  pattern) because they end up manipulating the same kind of input object.
-- Mutations remain slim and readable with only a couple of top-level arguments.
+いくつかの引数はそのままにしておくべきだという議論がある一方で、このような状況において、我々は必須制約を犠牲にしても引数の共通部分をDRYにする結論をだしました。
 
-The primary cost, of course, is that it's no longer clear from the schema that
-the title is required on creation. Our schema ends up looking like this:
+この決定はいくつかの利点を提供します。
+
+- スキーマにすでに存在している`Collection`型を利用し、コレクションの概念を表すひとつの入力オブジェクトを受け取ります。
+- 同じ入力オブジェクトを操作するため、クライアントはcreateとupdateの入力フォームを共通のコードで管理できます。
+- トップレベルでは少数の引数を受け取るだけで済むため、mutationはスリムで可読性に優れています。
+
+主たるデメリットとしては、スキーマからはもはやcreate操作時にtitleが必須であるという条件を明示的に読み取れないことが考えられます。
+
+スキーマは以下のようになります。
 
 ```graphql
 type Mutation {
@@ -778,8 +774,7 @@ input CollectionInput {
 }
 ```
 
-*Rule #21: Structure mutation inputs to reduce duplication, even if this
- requires relaxing requiredness constraints on certain fields.*
+*ルール #21: たとえいくつかのフィールドの必須制約を緩和する必要があっても、重複を減らすためにmutationの入力を構造化すること。*
 
 ### Output
 
