@@ -693,20 +693,16 @@ input CollectionRuleInput {
 
 ### Input: Scalars
 
-This draft is a lot better than a completely naive approach, but it still isn't
-perfect. In particular, the `description` input field has a couple of issues. A
-non-null `HTML` field makes sense for the output of a collection's description,
-but it doesn't work as well for input for a couple of reasons. First-off, while
-`!` denotes non-nullability on output, it doesn't mean quite the same thing on
-input; instead it denotes more the concept of whether a field is "required". A
-required field is one the client must provide in order for the request to
-proceed, and this isn't true for `description`. We don't want to prevent clients
-from creating collections if they don't provide a description (or equivalently,
-we don't want to force them to provide a useless `""`), so we should make
-`description` non-required.
+GraphQLの草案は素朴なものよりもかなり良くなっていますが、まだ完全ではありません。
+とくに`description`入力フィールドはいくつか問題をかかえています。
+出力時にはコレクションの説明として非Nullの`HTML`フィールドが適していましたが、入力としてはいくつかの理由でうまくいきません。
+まずはしめに、`!`記号は出力において非Nullを示すために用いましたが、入力に対してまったく同じ意味をなすとは言えません。
+`!`記号はむしろフィールドが"必須"であるか否かを意味します。
+必須フィールドはリクエストを処理するためにクライアント側が必ず渡す必要のあるものですが、`description`はこの類ではありません。
+クライアントが説明文を渡さなかった場合でも、コレクションを作成する処理を妨げたくありません（同じく、クライアントに無用な空文字列`""`を渡すことを強要したくありません。）
+したがって`description`は非必須とするべきです。
 
-*Rule #18: Only make input fields required if they're actually semantically
- required for the mutation to proceed.*
+*ルール #18: mutation処理を遂行するうえで意味的に本当に必要である場合に限り、入力フィールドを必須とすること。*
 
 The other issue with `description` is its type; this may seem counter-intuitive
 since it is already strongly-typed (`HTML` instead of `String`) and we've been
