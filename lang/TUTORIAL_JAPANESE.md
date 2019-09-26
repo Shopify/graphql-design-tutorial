@@ -1,16 +1,19 @@
 # Tutorial: Designing a GraphQL API
 
-本チュートリアルは[Shopify](https://www.shopify.ca/)によって社内向けに作られました。
-我々は本チュートリアルがGraphQL APIを利用する全ての方にとって役に立つと考え、公開版を作成するに至りました。
+本チュートリアルはもともと[Shopify](https://www.shopify.ca/)が社内向けに作成しました。
+そして、本チュートリアルがGraphQL APIを利用する全ての方にとって役に立つと考え、公開版を作成するに至りました。
 
-本チュートリアルは、Shopifyのプロダクション環境における過去３年間のスキーマ構築と発展から得た学びに基づいています。
+本チュートリアルは、Shopifyのプロダクション環境における過去３年間のスキーマ構築と拡張から得た学びに基づいています。
 本チュートリアルはこれまでも発展してきましたし、今後も更新され続けるでしょう。
+
+我々は本デザインガイドラインが多くの場合に有用であると信じていますが、すべてがあらゆる状況に当てはまるとは限りません。
+ほとんどのルールがつねに100%適用可能な訳ではないため、社内のなかでも未だに議論がありますし、例外を設けています。
 ですから、本チュートリアルに盲目的に従ってすべてを取り込もうとせず、あなたの目的や状況に応じて役に立つ部分を適用してください。
 
 ## Intro
 
 ようこそ！本ドキュメントでは、新しいGraphQL APIの（あるいは既存のGraphQL APIの拡張の）設計方法をみていきます。
-APIの設計は、繰り返し、実験し、ビジネスドメインの十分な理解を得るに値する挑戦的な仕事です。
+APIの設計は、反復的な改善、実験、ビジネスドメインの十分な理解が求められる挑戦的なタスクです。
 
 ## Step Zero: Background
 
@@ -818,7 +821,7 @@ type CollectionUpdatePayload {
 ```
 
 ここでも依然として`collection`がNullableになっていることに注目してください。
-有効なコレクションのIDが渡されない場合には、返すべきコレクションがありません。
+渡されたものが有効なコレクションのIDでなかった場合、返すべきコレクションがないからです。
 
 *ルール #23: すべてのエラーケースおいて返せる特定の値がないのであれば、mutationが返すほとんどのフィールドはNullableであること。*
 
@@ -851,7 +854,7 @@ type CollectionUpdatePayload {
 
 ## Conclusion
 
-Thank you for reading our tutorial! Hopefully by this point you have a solid
-idea of how to design a good GraphQL API.
+我々のチュートリアルを読んでいただきありがとうございました！
+GraphQL APIの良いデザインに関する有用なアイディアを持ち帰っていただければ幸いです。
 
-Once you've designed an API you're happy with, it's time to implement it!
+満足のいくデザインができたら、あとは実装するだけです！
