@@ -778,14 +778,12 @@ input CollectionInput {
 
 ### Output
 
-The final design question we need to deal with is the return value of our
-mutations. Typically mutations can succeed or fail, and while GraphQL does
-include explicit support for query-level errors, these are not ideal for
-business-level mutation failures. Instead, we reserve these top-level errors for
-failures of the client (e.g. requesting a non-existant field) rather than of the
-user. As such, each mutation should define a "payload" type which includes a
-user-errors field in addition to any other values that might be useful. For
-create, that might look like this:
+設計に関する問題で最後に扱うのはmutationの戻り値です。
+基本的にmutationは実行結果として成功か、さもなくば失敗に到達します。
+GraphQLは明示的にはクエリーレベルのエラー処理を提供するものの、ビジネスロジックレベルにおけるmutationのエラーとしては最適なものではありません。
+トップレベルのエラーはユーザ操作に対するエラーよりもむしろクライアント向けのエラー（例えば無効なフィールドの要求）の情報を提供するためにとっておきます。
+その代わり、各mutationはその他の必要な情報に加えてユーザエラーフィールドを含む"payload"型を定義すべきです。
+createのmutationはおそらく以下のようになるでしょう。
 
 ```graphql
 type CollectionCreatePayload {
@@ -801,19 +799,16 @@ type UserError {
 }
 ```
 
-Here, a successful mutation would return an empty list for `userErrors` and
-would return the newly-created collection for the `collection` field. An
-unsuccessful mutation would return one or more `UserError` objects, and `null`
-for the collection.
+処理に成功したmutationは空リストの`userErrors`と、`collection`フィールドには新たに作成されたコレクションを入れて返します。
+処理に失敗したmutationはひとつ以上の`UserError`オブジェクトを含むリストと、コレクションには`nil`を入れて返します。
 
-*Rule #22: Mutations should provide user/business-level errors via a
- `userErrors` field on the mutation payload. The top-level query errors entry is
- reserved for client and server-level errors.*
+*ルール #22: mutationはビジネスロジックレベルのエラーを`userErrors`フィールドに入れて返すこと。
+トップレベルのエラーフィールドはクライアントおよびサーバーレベルのエラーのために残しておくこと。*
 
-In many implementations, much of this structure is provided automatically, and
-all you will have to define is the `collection` return field.
+多くの実装においてこの構造の大半は自動的に提供されます。
+そのため、ここで為すべきは`collection`フィールドを定義することです。
 
-For the update mutation, we follow exactly the same pattern:
+updateのmutationに関しても同じパターンに従います。
 
 ```graphql
 type CollectionUpdatePayload {
@@ -822,12 +817,10 @@ type CollectionUpdatePayload {
 }
 ```
 
-It's worth noting that `collection` is still nullable even here, since if the
-provided ID doesn't represent a valid collection, there is no collection to
-return.
+ここでも依然として`collection`がNullableになっていることに注目してください。
+有効なコレクションのIDが渡されない場合には、返すべきコレクションがありません。
 
-*Rule #23: Most payload fields for a mutation should be nullable, unless there
- is really a value to return in every possible error case.*
+*ルール #23: すべてのエラーケースおいて返せる特定の値がないのであれば、mutationが返すほとんどのフィールドはNullableであること。*
 
 ## TLDR: The rules
 
