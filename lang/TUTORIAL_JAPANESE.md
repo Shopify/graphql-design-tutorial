@@ -1,4 +1,4 @@
-# Tutorial: Designing a GraphQL API
+# チュートリアル: GraphQL APIの設計
 
 本チュートリアルはもともと[Shopify](https://www.shopify.ca/)が社内向けに作成しました。
 そして、本チュートリアルがGraphQL APIを利用する全ての方にとって役に立つと考え、公開版を作成するに至りました。
@@ -10,12 +10,12 @@
 ほとんどのルールがつねに100%適用可能な訳ではないため、社内のなかでも未だに議論がありますし、例外を設けています。
 ですから、本チュートリアルに盲目的に従ってすべてを取り込もうとせず、あなたの目的や状況に応じて役に立つ部分を適用してください。
 
-## Intro
+## イントロダクション
 
 ようこそ！本ドキュメントでは、新しいGraphQL APIの（あるいは既存のGraphQL APIの拡張の）設計方法をみていきます。
 APIの設計は、反復的な改善、実験、ビジネスドメインの十分な理解が求められる挑戦的なタスクです。
 
-## Step Zero: Background
+## ステップ０: 背景
 
 本チュートリアルでは、あるE-コマース運営企業の開発業務を想定します。
 あなたはすでに商品情報を公開するための非常に小規模なGraphQL APIをもっています。
@@ -33,7 +33,7 @@ APIの設計は、反復的な改善、実験、ビジネスドメインの十�
 
 以上の背景をふまえ、APIデザインを考えていきます。
 
-## Step One: A Bird's-Eye View
+## ステップ１: 俯瞰的な視点
 
 素朴にスキーマを定義すると以下のようになります（`Product` など既存の型は省略します。）
 ```graphql
@@ -113,9 +113,9 @@ type CollectionMembership {
 このシンプルな表現ではすべての値フィールド、フィールド名、Null制約の情報を取り除いてあります。
 残ったものはGraphQLのように見える何かに過ぎませんが、型や関連性といった高いレベルで考えさせてくれます。
 
-*ルール #1: 詳細に取り掛かる前に、高いレベルでオブジェクトとそれらの関連性を考えることからはじめよ。*
+*ルール #1: 詳細に取り掛かる前に、高いレベルでオブジェクトとそれらの関連性を考えることからはじめること。*
 
-## Step Two: A Clean Slate
+## ステップ２: 白紙の状態
 
 それではこのシンプルな構造を用いて、当初の設計における主要な誤りをみていきましょう。
 
@@ -125,11 +125,11 @@ type CollectionMembership {
 このアプローチの根本的な問題は、APIは詳細実装とは異なる目的の振る舞いを持ち、また多くの場合は抽象度のレベルも異なることです。
 今回のケースでは、我々の詳細実装によって多くの迷いが生じました。
 
-### Representing `CollectionMembership`s
+### `CollectionMembership`の表現
 
-現状のスキーマに `CollectionMembership` が含まれていることに気がついたかもしれません。
-コレクションメンバーシップテーブルは商品とコレクションの間の他対他の関連を表現するために使われます。
-最後の部分をもう一度読んでください、「*商品とコレクションの間*」の関連とあります。
+現状のスキーマに`CollectionMembership`が含まれていることに気がついたかもしれません。
+コレクションメンバーシップテーブルは商品とコレクションの他対他の関連を表現するために使われます。
+最後の部分をもう一度読んでください、「*商品とコレクション*」の関連とあります。
 ビジネスドメインのセマンティクスからすれば、コレクションメンバーシップは意味を持っていないのです。
 コレクションメンバーシップは詳細実装です。
 
@@ -159,9 +159,9 @@ type AutomaticCollectionRule { }
 
 かなり良くなりました。
 
-*ルール #2: 詳細実装をAPI設計において表現してはならない。*
+*ルール #2: 詳細実装をAPI設計に含めないこと。*
 
-### Representing Collections
+### コレクションの表現
 
 ビジネスドメインの十分な理解がないと気づかないかもしれませんが、まだ今のAPI設計には大きな誤りがひとつ残されています。
 
@@ -192,7 +192,7 @@ type CollectionRule { }
 しかし、思い出してください、これは関連のリストなのです。
 我々のあたらしいAPI設計では、手動コレクションは単に選択ルールが無い（空）コレクションにすぎません。
 
-### Conclusion
+### 結論
 
 この抽象レベルにおけて最適なAPI設計を行うには、モデリング対象としているビジネスドメインへの深い理解が要求されます。
 ュートリアルの設定だけで特定の話題に関するコンテキストの深さをお伝えするのは困難ですが、本節のコレクション設計の例を通して、APIの設計方針を説明できていれば幸いです。
@@ -211,7 +211,7 @@ REST APIとGraphQLの背後にある設計思想はまったく異なった決�
 
 *ルール #3: 詳細実装でも、ユーザインタフェースでも、あるいはレガシーなAPIでもなく、ビジネスドメインに従ってAPI設計を行うこと。*
 
-## Step Three: Adding Detail
+## ステップ３: 詳細を詰める
 
 我々の型をモデリングするクリーンな構造を手に入れることができました。  
 もう一度、細部に視点を移して省いていたフィールドを追加していきましょう。
@@ -224,7 +224,7 @@ GraphQLにおいて要素を追加するという操作は簡単ですが、そ�
 
 *ルール #4: フィールドの追加操作は削除操作よりも簡単。*
 
-### Starting point
+### 出発点
 
 素朴な設計で存在していたフィールドを、我々の新しい構造に戻すと次のスキーマを得ます。
 
@@ -249,7 +249,7 @@ type CollectionRule {
 これが我々が解決すべき新しい問題です。
 上から順にフィールドをみていき、ひとつずつ解決していきましょう。
 
-### IDs and the `Node` Interface
+### IDと`Node`インターフェース
 
 まずはじめに、コレクション型のIDフィールドに注目します。  
 良さそうに見えます。IDはAPIを通してとくに変更や削除操作を行う際に、コレクションを特定するために使われます。
@@ -273,9 +273,9 @@ type Collection implements Node {
 }
 ```
 
-*ルール #5: 主要なビジネスオブジェクト型は`Node`インターフェースを実装する。*
+*ルール #5: 主要なビジネスオブジェクト型は`Node`インターフェースを実装すること。*
 
-### Rules and Subobjects
+### ルールとサブオブジェクト
 
 コレクション内の、つぎの２つのフィールド`rules`と`rulesApplyDisjunctively`をみていきましょう。  
 
@@ -287,7 +287,8 @@ Nullableなリストを使う場合は、本当にそれが空リストとNull�
 
 ２つめのフィールドはすこし厄介です。`rulesApplyDisjunctively`はルールを分けて適用すべきか否かを表すBooleanフィールドです。  
 非Nullと示されていますが、ここで問題に遭遇します。手動コレクションの場合にこのフィールドは一体どの値をもつべきでしょうか。  
-trueとfalseのいずれもミスリーディングのように感じますが、かといってNullableにしたところで３状態を表現するフラグは、自動コレクションの場合に違和感を覚えます。
+trueとfalseのいずれもミスリーディングのように感じます。
+かといってNullableにしたところで３状態を表現するフラグは、自動コレクションの場合に違和感を覚えます。
 
 この問題のパズルを試してみるのもいいですが、他にももうひとつ考えるに値する方法があります。  
 これら２つのフィールドは明らかに密接に関連しています。意味的にも明らかですし、同じ接頭辞を用いているという事実からも確認できます。  
@@ -328,7 +329,7 @@ NullableなBooleanを使う場合は、本当に３状態（Null/false/true）�
 
 *ルール #6: 密接に関連する複数のフィールドはサブオブジェクトにまとめること。*
 
-### Lists and Pagination
+### リストとページネーション
 
 つぎは`products`フィールドです。これは問題ないかもしれません。
 `CollectionMembership`型を取り除くことで、我々はすでに関連に関する問題を修正しました。
@@ -363,9 +364,9 @@ type PageInfo {
 }
 ```
 
-*ルール #7: リストフィールドについてはページネーションの必要有無を常に確認する。*
+*ルール #7: リストフィールドについてはページネーションの必要性を常に確認すること。*
 
-###  Strings
+### 文字列
 
 次に登場するのは`title`フィールドです。これは本当に現状のままで問題ないでしょう。  
 すべてのコレクションはタイトルを持っているはずなので、非Nullのシンプルな文字列型です。
@@ -374,7 +375,7 @@ type PageInfo {
 NullableなStringを使う場合は、存在しないこと(`null`)と、存在しているが空文字列(`""`)の状態について意味的に本当に差異があるか確認ましょう。*
 空文字列を”許容可能だが値が埋められていない”ものとし、Nullを”許容不可能”なものと考えることができます*
 
-### IDs and Relations
+### IDと関連
 
 さて、`imageId`フィールドに取り掛かりましょう。
 このフィールドは、RESTの思想をGraphQLに適用しようとしたときに何がおこるかを示す典型的な例です。
@@ -418,7 +419,7 @@ type CollectionRule {
 
 *ルール #8: IDフィールドの代わりとして常にオブジェクトの参照を使うこと。*
 
-### Naming and Scalars
+### 命名とスカラー
 
 `Collection`型の最後のフィールドは`bodyHtml`です。  
 これはコレクションに対する説明文です。
@@ -445,7 +446,7 @@ GraphQLは標準で十分なスカラー型（`String`, `Int`, `Boolean`など�
 
 *ルール #10: 特定の意味を持った値を表現する場合にはカスタムスカラー型を使うこと。*
 
-### Pagination Again
+### 再びページネーション
 
 これで`Collection`型のすべてのフィールドを確認しました。
 つぎのオブジェクトは非常にシンプルな`CollectionRuleSet`です。  
@@ -457,7 +458,7 @@ GraphQLは標準で十分なスカラー型（`String`, `Int`, `Boolean`など�
 たとえ数十のルールだとしても、それはコレクションの定義を考え直す兆候かもしれません。
 あるいは単に手動で商品を追加すれば済む話かもしれません。
 
-### Enums
+### 列挙型
 
 最後に残った型は`CollectionRule`です。
 それぞれのルールは、フィルタ対象のカラム（例えば商品名）、比較方法（例えば完全一致）、そして`condition`と呼ばれる紛らわしい比較対象値（例えば"Boots"）によって構成されます。
@@ -513,9 +514,9 @@ enum CollectionRuleRelation {
 }
 ```
 
-*ルール #11: 特定の値しかとることがないなら列挙型を使うこと。*
+*ルール #11: 特定の値しかとることがなければ列挙型を使うこと。*
 
-## Step Four: Business Logic
+## ステップ４: ビジネスロジック
 
 さて、これでコレクションに対する最小かつ良く設計されたGraphQL APIが得られました。  
 まだ手を付けていないコレクションの詳細部分がありますが（商品の並び順や公開・非公開のの管理のためにまだ多くのフィールドが必要でしょう）、それら全てが等しく従うであろう設計パターンはすでに見てきました。  
@@ -534,8 +535,7 @@ enum CollectionRuleRelation {
 ほとんどの場合でAPIは複数のクライアントに対して提供されます。
 もしそれぞれのクライアントが同じロジックを実装しなければならないとしたら、それはコードの重複を生み、不必要なタスクとエラーが発生させる余地を伴います。
 
-*ルール #12: APIはデータだけではなくビジネスロジックを提供すべき。
-複雑な計算はサーバーで為されるべきで、複数のクライアントではない。*
+*ルール #12: APIはデータだけではなくビジネスロジックを提供すること。複雑な計算はサーバーで為されるべきで、複数のクライアントではない。*
 
 クライアントのユースケースに戻りましょう。ここでの最適解は、商品の所属有無判定を解決する専用のフィールドを設けることです。
 具体的にはこのような定義になるでしょう。
@@ -563,7 +563,7 @@ GraphQLはクライアントから明示的に要求されたものだけを返�
 ビジネスドメインのデータは依然としてコアモデルだということに変わりはありません。
 もしビジネスロジックのフィールドがどうしてもフィットしないと感じているなら、それは背後にあるモデル自体が正しくないことを示すサインかもしれません。
 
-## Step Five: Mutations
+## ステップ５: Mutations
 
 我々のGraphQLスキーマに足りていない最後のピースはデータを変更する機能です。
 コレクションを追加、変更したり、コレクションと関連するオブジェクトを削除するといった操作です。
@@ -572,7 +572,7 @@ GraphQLはクライアントから明示的に要求されたものだけを返�
 素朴にCRUD操作のパラダイムに従い、`create`、`delete`、そして`update`操作のmutationを設けてみます。
 これは議論を始めるにはちょうど良いものの、正しいGraphQL APIとしては不十分です。
 
-### Separate Logical Actions
+### 論理的なアクションの分割
 
 CRUDに従おうとすると、すぐに`update`が巨大になるということにまず気付くと思います。
 タイトルのようなシンプルなスカラー値を更新するだけではなく、コレクションの公開や非公開、商品の追加/削除/並べ替え操作、自動コレクションのルールの変更といったあらゆる複雑な操作がupdateの責任範囲となります。
@@ -588,7 +588,7 @@ CRUDに従おうとすると、すぐに`update`が巨大になるというこ�
 
 *ルール #14: リソースに対するロジックの異なる操作にはそれぞれmutationを用意すること。*
 
-### Manipulating Relationships
+### 関連の操作
 
 `update` mutationは依然として大きすぎる責務を負っているため、引き続き分解を進めましょう。
 とはいえ、分解した操作もそれぞれ別の次元（例えば１対多や多対多の関係性に関する操作）から考えてみる価値があるので、後ほど順に見ていきます。
@@ -641,7 +641,7 @@ mutationにおいても類似する問題に対処しなければなりません
 
 *ルール #16: 関連に対するmutationを分けて実装するときには、一度に複数の要素に対して実行することが便利かどうか検討すること。*
 
-### Input: Structure, Part 1
+### 入力: 構造 パート１
 
 さて、これで我々がどのようなmutationが必要なのかが分かりました。
 つぎは入力の型を明らかにしていきます。
@@ -694,7 +694,7 @@ input CollectionRuleInput {
 
 *ルール #17: アルファベット順でグループ化するために、mutationの接頭辞に操作対象のオブジェクト名を用いること（例えば`cancelOrder`ではなく`orderCancel`とする。）*
 
-### Input: Scalars
+### 入力: スカラー
 
 GraphQLの草案は素朴なものよりもかなり良くなっていますが、まだ完全ではありません。
 とくに`description`入力フィールドはいくつか問題をかかえています。
@@ -719,8 +719,7 @@ GraphQLの草案は素朴なものよりもかなり良くなっていますが�
 処理を簡単にするために、クライアント側で事前に検証を行うことが難しい場合には、我々は入力対して意図的に弱い型付けを行います。
 これにより、ビジネスロジックレイヤーがすべての検証を行い、クライアントも一箇所から発生するエラーだけに対処するだけで済みます。
 
-*ルール #19: フォーマットが曖昧であったり、クライアント側の検証が複雑な場合には、入力に対して弱い型付け（`Email`ではなく`String`）を行うこと。
- これによりサーバーは一度にすべての検証を実行し、単一のフォーマットでエラーを報告することになり、結果としてクライアント非常にシンプルになる。*
+*ルール #19: フォーマットが曖昧であったり、クライアント側の検証が複雑な場合には、入力に対して弱い型付け（`Email`ではなく`String`）を行うこと。これによりサーバーは一度にすべての検証を実行し、単一のフォーマットでエラーを報告することになり、結果としてクライアント非常にシンプルになる。*
 
 これはすべての入力に対して弱い型付けを推奨している訳ではないことに注意してください。
 我々はroleの入力における`field`と`relation`フィールドに強い型付けをもったenumを用いています。
@@ -731,10 +730,9 @@ HTMLはうまく定義されていて、明瞭な仕様がありますが、検�
 他方で日時や日付を表現する文字列には何百の表現方法があり、それらすべてが適切にシンプルなフォーマットをもっています。
 したがって、サーバーが期待するフォーマットを指定するために強い型付けを行うと便利です。
 
-*ルール #20: フォーマットが曖昧でクライアント側検証がシンプルな場合は強い型付け（`String`ではなく`DateTime`）を行うこと。
- 型付けにより明確さを得られ、クライアントにより厳しい入力値管理（フリーテキスト入力ではなくカレンダーウィジェットを用いる）を促します。*
+*ルール #20: フォーマットが曖昧でクライアント側検証がシンプルな場合は強い型付け（`String`ではなく`DateTime`）を行うこと。型付けにより明確さを得られ、クライアントにより厳しい入力値管理（フリーテキスト入力ではなくカレンダーウィジェットを用いる）を促せる。*
 
-### Input: Structure, Part 2
+### 入力: 構造 パート２
 
 つづいてupdate操作をみていきます。
 
@@ -779,7 +777,7 @@ input CollectionInput {
 
 *ルール #21: たとえいくつかのフィールドの必須制約を緩和する必要があっても、重複を減らすためにmutationの入力を構造化すること。*
 
-### Output
+### 出力
 
 設計に関する問題で最後に扱うのはmutationの戻り値です。
 基本的にmutationは実行結果として成功か、さもなくば失敗に到達します。
@@ -805,8 +803,7 @@ type UserError {
 処理に成功したmutationは空リストの`userErrors`と、`collection`フィールドには新たに作成されたコレクションを入れて返します。
 処理に失敗したmutationはひとつ以上の`UserError`オブジェクトを含むリストと、コレクションには`nil`を入れて返します。
 
-*ルール #22: mutationはビジネスロジックレベルのエラーを`userErrors`フィールドに入れて返すこと。
-トップレベルのエラーフィールドはクライアントおよびサーバーレベルのエラーのために残しておくこと。*
+*ルール #22: mutationはビジネスロジックレベルのエラーを`userErrors`フィールドに入れて返すこと。トップレベルのエラーフィールドはクライアントおよびサーバーレベルのエラーのために残しておくこと。*
 
 多くの実装においてこの構造の大半は自動的に提供されます。
 そのため、ここで為すべきは`collection`フィールドを定義することです。
@@ -827,30 +824,29 @@ type CollectionUpdatePayload {
 
 ## TLDR: The rules
 
-- Rule #1: Always start with a high-level view of the objects and their relationships before you deal with specific fields.
-- Rule #2: Never expose implementation details in your API design.
-- Rule #3: Design your API around the business domain, not the implementation, user-interface, or legacy APIs.
-- Rule #4: It’s easier to add fields than to remove them.
-- Rule #5: Major business-object types should always implement Node.
-- Rule #6: Group closely-related fields together into subobjects.
-- Rule #7: Always check whether list fields should be paginated or not.
-- Rule #8: Always use object references instead of ID fields.
-- Rule #9: Choose field names based on what makes sense, not based on the implementation or what the field is called in legacy APIs.
-- Rule #10: Use custom scalar types when you’re exposing something with specific semantic value.
-- Rule #11: Use enums for fields which can only take a specific set of values.
-- Rule #12: The API should provide business logic, not just data. Complex calculations should be done on the server, in one place, not on the client, in many places.
-- Rule #13: Provide the raw data too, even when there’s business logic around it.
-- Rule #14: Write separate mutations for separate logical actions on a resource.
-- Rule #15: Mutating relationships is really complicated and not easily summarized into a snappy rule.
-- Rule #16: When writing separate mutations for relationships, consider whether it would be useful for the mutations to operate on multiple elements at once.
-- Rule #17: Prefix mutation names with the object they are mutating for
- alphabetical grouping (e.g. use `orderCancel` instead of `cancelOrder`).
-- Rule #18: Only make input fields required if they're actually semantically required for the mutation to proceed.
-- Rule #19: Use weaker types for inputs (e.g. String instead of Email) when the format is unambiguous and client-side validation is complex. This lets the server run all non-trivial validations at once and return the errors in a single place in a single format, simplifying the client.
-- Rule #20: Use stronger types for inputs (e.g. DateTime instead of String) when the format may be ambiguous and client-side validation is simple. This provides clarity and encourages clients to use stricter input controls (e.g. a date-picker widget instead of a free-text field).
-- Rule #21: Structure mutation inputs to reduce duplication, even if this requires relaxing requiredness constraints on certain fields.
-- Rule #22: Mutations should provide user/business-level errors via a userErrors field on the mutation payload. The top-level query errors entry is reserved for client and server-level errors.
-- Rule #23: Most payload fields for a mutation should be nullable, unless there is really a value to return in every possible error case.
+- ルール #1: 詳細に取り掛かる前に、高いレベルでオブジェクトとそれらの関連性を考えることからはじめること。
+- ルール #2: 詳細実装をAPI設計に含めないこと。
+- ルール #3: 詳細実装でも、ユーザインタフェースでも、あるいはレガシーなAPIでもなく、ビジネスドメインに従ってAPI設計を行うこと。
+- ルール #4: フィールドの追加操作は削除操作よりも簡単。
+- ルール #5: 主要なビジネスオブジェクト型は`Node`インターフェースを実装すること。
+- ルール #6: 密接に関連する複数のフィールドはサブオブジェクトにまとめること。
+- ルール #7: リストフィールドについてはページネーションの必要性を常に確認すること。
+- ルール #8: IDフィールドの代わりとして常にオブジェクトの参照を使うこと。
+- ルール #9: 歴史的経緯や詳細実装ではなく、意味のある概念に基づいてフィールド名を選ぶこと。
+- ルール #10: 特定の意味を持った値を表現する場合にはカスタムスカラー型を使うこと。
+- ルール #11: 特定の値しかとることがなければ列挙型を使うこと。
+- ルール #12: APIはデータだけではなくビジネスロジックを提供すること。複雑な計算はサーバーで為されるべきで、複数のクライアントではない。
+- ルール #13: ビジネスロジックによって済まされる場合でも、元データを提供すること。
+- ルール #14: リソースに対するロジックの異なる操作にはそれぞれmutationを用意すること。
+- ルール #15: 関連に対する操作は複雑で、ひとつの便利な指針で語ることはできない。
+- ルール #16: 関連に対するmutationを分けて実装するときには、一度に複数の要素に対して実行することが便利かどうか検討すること。
+- ルール #17: アルファベット順でグループ化するために、mutationの接頭辞に操作対象のオブジェクト名を用いること（例えば`cancelOrder`ではなく`orderCancel`とする。）
+- ルール #18: mutation処理を遂行するうえで意味的に本当に必要である場合に限り、入力フィールドを必須とすること。
+- ルール #19: フォーマットが曖昧であったり、クライアント側の検証が複雑な場合には、入力に対して弱い型付け（`Email`ではなく`String`）を行うこと。これによりサーバーは一度にすべての検証を実行し、単一のフォーマットでエラーを報告することになり、結果としてクライアント非常にシンプルになる。
+- ルール #20: フォーマットが曖昧でクライアント側検証がシンプルな場合は強い型付け（`String`ではなく`DateTime`）を行うこと。型付けにより明確さを得られ、クライアントにより厳しい入力値管理（フリーテキスト入力ではなくカレンダーウィジェットを用いる）を促せる。
+- ルール #21: たとえいくつかのフィールドの必須制約を緩和する必要があっても、重複を減らすためにmutationの入力を構造化すること。
+- ルール #22: mutationはビジネスロジックレベルのエラーを`userErrors`フィールドに入れて返すこと。トップレベルのエラーフィールドはクライアントおよびサーバーレベルのエラーのために残しておくこと。
+- ルール #23: すべてのエラーケースおいて返せる特定の値がないのであれば、mutationが返すほとんどのフィールドはNullableであること。
 
 ## Conclusion
 
