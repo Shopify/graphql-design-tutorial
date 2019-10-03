@@ -912,7 +912,7 @@ The final design question we need to deal with is the return value of our
 mutations. Typically mutations can succeed or fail, and while GraphQL does
 include explicit support for query-level errors, these are not ideal for
 business-level mutation failures. Instead, we reserve these top-level errors for
-failures of the client (e.g. requesting a non-existant field) rather than of the
+failures of the client (e.g. requesting a non-existent field) rather than of the
 user. As such, each mutation should define a "payload" type which includes a
 user-errors field in addition to any other values that might be useful. For
 create, that might look like this:
