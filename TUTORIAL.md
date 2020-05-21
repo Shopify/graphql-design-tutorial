@@ -13,7 +13,37 @@ for you. Even within the company we still question them and have exceptions
 since most rules can't apply 100% of the time. So don't just blindly copy and
 implement all of them. Pick and choose which ones make sense for you and your
 use cases.
- 
+
+Table of Contents
+=================
+* [Intro](#intro)
+* [Step Zero: Background](#step-zero-background)
+* [Step One: A Bird's\-Eye View](#step-one-a-birds-eye-view)
+* [Step Two: A Clean Slate](#step-two-a-clean-slate)
+  * [Representing CollectionMemberships](#representing-collectionmemberships)
+  * [Representing Collections](#representing-collections)
+  * [Conclusion](#conclusion)
+* [Step Three: Adding Detail](#step-three-adding-detail)
+  * [Starting point](#starting-point)
+  * [IDs and the Node Interface](#ids-and-the-node-interface)
+  * [Rules and Subobjects](#rules-and-subobjects)
+  * [Lists and Pagination](#lists-and-pagination)
+  * [Strings](#strings)
+  * [IDs and Relations](#ids-and-relations)
+  * [Naming and Scalars](#naming-and-scalars)
+  * [Pagination Again](#pagination-again)
+  * [Enums](#enums)
+* [Step Four: Business Logic](#step-four-business-logic)
+* [Step Five: Mutations](#step-five-mutations)
+  * [Separate Logical Actions](#separate-logical-actions)
+  * [Manipulating Relationships](#manipulating-relationships)
+  * [Input: Structure, Part 1](#input-structure-part-1)
+  * [Input: Scalars](#input-scalars)
+  * [Input: Structure, Part 2](#input-structure-part-2)
+  * [Output](#output)
+* [TLDR: The rules](#tldr-the-rules)
+* [Conclusion](#conclusion-1)
+
 ## Intro
 
 Welcome! This document will walk you through designing a new GraphQL API (or a
