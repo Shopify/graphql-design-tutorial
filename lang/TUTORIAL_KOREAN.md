@@ -43,7 +43,7 @@ interface Collection {
 type AutomaticCollection implements Collection {
   id: ID!
   rules: [AutomaticCollectionRule!]!
-  rulesApplyDisjunctively: Bool!
+  rulesApplyDisjunctively: Boolean!
   memberships: [CollectionMembership!]!
   title: String!
   imageId: ID
@@ -210,7 +210,7 @@ collection에 대해 깊이 이해하고 있지 않더라도, 실제로 모델�
 type Collection {
   id: ID!
   rules: [CollectionRule!]!
-  rulesApplyDisjunctively: Bool!
+  rulesApplyDisjunctively: Boolean!
   products: [Product!]!
   title: String!
   imageId: ID
@@ -275,7 +275,7 @@ type Collection implements Node {
 
 type CollectionRuleSet {
   rules: [CollectionRule!]!
-  appliesDisjunctively: Bool!
+  appliesDisjunctively: Boolean!
 }
 
 type CollectionRule {
@@ -350,7 +350,7 @@ type Image {
 
 type CollectionRuleSet {
   rules: [CollectionRule!]!
-  appliesDisjunctively: Bool!
+  appliesDisjunctively: Boolean!
 }
 
 type CollectionRule {
@@ -400,7 +400,7 @@ type Collection implements Node {
 
 type CollectionRuleSet {
   rules: [CollectionRule!]!
-  appliesDisjunctively: Bool!
+  appliesDisjunctively: Boolean!
 }
 
 type CollectionRule {
@@ -449,7 +449,7 @@ enum CollectionRuleRelation {
 ```graphql
 type Collection implements Node {
   # ...
-  hasProduct(id: ID!): Bool!
+  hasProduct(id: ID!): Boolean!
 }
 ```
 
@@ -540,7 +540,7 @@ type Mutation {
 
 input CollectionRuleSetInput {
   rules: [CollectionRuleInput!]!
-  appliesDisjunctively: Bool!
+  appliesDisjunctively: Boolean!
 }
 
 input CollectionRuleInput {
