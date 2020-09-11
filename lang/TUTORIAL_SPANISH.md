@@ -94,7 +94,7 @@ interface Collection {
 type AutomaticCollection implements Collection {
   id: ID!
   rules: [AutomaticCollectionRule!]!
-  rulesApplyDisjunctively: Bool!
+  rulesApplyDisjunctively: Boolean!
   memberships: [CollectionMembership!]!
   title: String!
   imageId: ID
@@ -306,7 +306,7 @@ Restaurando los campos ingenuos ajustados para nuestro nuevo esquema obtenemos:
 type Collection {
   id: ID!
   rules: [CollectionRule!]!
-  rulesApplyDisjunctively: Bool!
+  rulesApplyDisjunctively: Boolean!
   products: [Product!]!
   title: String!
   imageId: ID
@@ -396,7 +396,7 @@ type Collection implements Node {
 
 type CollectionRuleSet {
   rules: [CollectionRule!]!
-  appliesDisjunctively: Bool!
+  appliesDisjunctively: Boolean!
 }
 
 type CollectionRule {
@@ -502,7 +502,7 @@ type Image {
 
 type CollectionRuleSet {
   rules: [CollectionRule!]!
-  appliesDisjunctively: Bool!
+  appliesDisjunctively: Boolean!
 }
 
 type CollectionRule {
@@ -585,7 +585,7 @@ type Collection implements Node {
 
 type CollectionRuleSet {
   rules: [CollectionRule!]!
-  appliesDisjunctively: Bool!
+  appliesDisjunctively: Boolean!
 }
 
 type CollectionRule {
@@ -653,7 +653,7 @@ específicamente dedicado a solucionar este problema. Prácticamente, esto se ve
 ```graphql
 type Collection implements Node {
   # ...
-  hasProduct(id: ID!): Bool!
+  hasProduct(id: ID!): Boolean!
 }
 ```
 Este campo toma el ID de un producto y regresa un booleano basado en si el servidor
@@ -818,7 +818,7 @@ type Mutation {
 
 input CollectionRuleSetInput {
   rules: [CollectionRuleInput!]!
-  appliesDisjunctively: Bool!
+  appliesDisjunctively: Boolean!
 }
 
 input CollectionRuleInput {

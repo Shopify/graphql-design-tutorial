@@ -48,7 +48,7 @@ interface Collection {
 type AutomaticCollection implements Collection {
   id: ID!
   rules: [AutomaticCollectionRule!]!
-  rulesApplyDisjunctively: Bool!
+  rulesApplyDisjunctively: Boolean!
   memberships: [CollectionMembership!]!
   title: String!
   imageId: ID
@@ -232,7 +232,7 @@ GraphQLにおいて要素を追加するという操作は簡単ですが、そ�
 type Collection {
   id: ID!
   rules: [CollectionRule!]!
-  rulesApplyDisjunctively: Bool!
+  rulesApplyDisjunctively: Boolean!
   products: [Product!]!
   title: String!
   imageId: ID
@@ -314,7 +314,7 @@ type Collection implements Node {
 
 type CollectionRuleSet {
   rules: [CollectionRule!]!
-  appliesDisjunctively: Bool!
+  appliesDisjunctively: Boolean!
 }
 
 type CollectionRule {
@@ -407,7 +407,7 @@ type Image {
 
 type CollectionRuleSet {
   rules: [CollectionRule!]!
-  appliesDisjunctively: Bool!
+  appliesDisjunctively: Boolean!
 }
 
 type CollectionRule {
@@ -484,7 +484,7 @@ type Collection implements Node {
 
 type CollectionRuleSet {
   rules: [CollectionRule!]!
-  appliesDisjunctively: Bool!
+  appliesDisjunctively: Boolean!
 }
 
 type CollectionRule {
@@ -543,7 +543,7 @@ enum CollectionRuleRelation {
 ```graphql
 type Collection implements Node {
   # ...
-  hasProduct(id: ID!): Bool!
+  hasProduct(id: ID!): Boolean!
 }
 ```
 
@@ -676,7 +676,7 @@ type Mutation {
 
 input CollectionRuleSetInput {
   rules: [CollectionRuleInput!]!
-  appliesDisjunctively: Bool!
+  appliesDisjunctively: Boolean!
 }
 
 input CollectionRuleInput {
