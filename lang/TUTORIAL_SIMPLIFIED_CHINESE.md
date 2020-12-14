@@ -52,7 +52,7 @@
 
 你的同事已经完成了这一需求的业务逻辑设计，具体如下：
 * 所有的合集都包含诸如：标题、详情描述（可能包括 HTML 片段）、缩略图 等基础字段。
-* 合集有 2 种类型，分布是 需要人工添加商品的手动合集（ManualCollections） 和 能够按照规则生成的自动合集（AutomaticCollections）——例如可以创建1个自动合集，该合集会将店铺内的存在 XL 码库存的所有男装都加入进去。
+* 合集有 2 种类型，分别是 需要人工添加商品的手动合集（ManualCollections） 和 能够按照规则生成的自动合集（AutomaticCollections）——例如可以创建1个自动合集，该合集会将店铺内的存在 XL 码库存的所有男装都加入进去。
 * 商品和合集之间是多对多（many-to-many）关系，在数据库层面存在一个叫做 `CollectionMembership`的中间关联表。
 * 就像商品可以设置上下架一样，合集也有一个字段可以设置其是否生效。
 
@@ -492,7 +492,7 @@ type Collection implements Node {
 
 ### 思考对象与对象间的关系
 
-在我们拆出 `publish` & `unpublish` 之后，`update` Mutation 仍然显得非常由衷因此有必要做进一步的拆分。，我们可以从对象与对象间的关系作为思考的切入点。
+在我们拆出 `publish` & `unpublish` 之后，`update` Mutation 仍然显得非常臃肿因此有必要做进一步的拆分。，我们可以从对象与对象间的关系作为思考的切入点。
 具体到商品与合集直接的关系，我们可以作出如下结论：
 1. 按照 CRUD 范式，当我们需要改变合集中所保护的商品就需要提供一个新的商品数组（形如 `products: [ProductInput!]!`），但假设某一集合中包含了非常多种商品，显然这样做会存在不小的性能问题。
 2. 为了实现增量更新，在 `update` Mutation 中提供诸如  `productsToAdd: [ID!]!` 、`productsToReorder: [ID!]!` 和 `productsToRemove: [ID!]!` 的字段会是一个好的选择。
@@ -606,7 +606,7 @@ input CollectionInput {
 
 尽管这样一来 `create` 时的 `title` 也变成了允许为空，但如果需要的话我们完全可以在 `create` 的 resolver 中再行验证。
 
-*规则二十一： 结构化 Mutation 的 Inpute 以减少重复，既是是以在类型层面上放宽对于某些字段的要求性约束为代价。*
+*规则二十一： 结构化 Mutation 的 Inpute 以减少重复，即使是以在类型层面上放宽对于某些字段的要求性约束为代价。*
 
 ### Mutation 的返回值
 
