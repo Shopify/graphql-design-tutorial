@@ -14,11 +14,13 @@ since most rules can't apply 100% of the time. So don't just blindly copy and
 implement all of them. Pick and choose which ones make sense for you and your
 use cases.
 
-Read the [full tutorial here](TUTORIAL.md).
+Read the [full tutorial here](TUTORIAL.md). It's also been translated by the community into [a few other languages](lang).
 
 ## Contributing
 Contributions are welcome; however, this tutorial reflects rules specific to Shopify and
 any substantial changes to those will primarily happen internally and not through external contributions.
+
+Corrections and additional translations are welcome in the [`lang` folder](lang). 
 
 ## Code of Conduct
 Anyone who wishes to contribute through code or issues, take a look at the

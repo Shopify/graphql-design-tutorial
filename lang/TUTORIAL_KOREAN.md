@@ -6,6 +6,36 @@
 
 우리는 스키마 디자인 가이드가 대부분의 경우에 유용할 것이라고 생각합니다. 어쩌면 여러분에게는 맞지 않을 수도 있습니다. 대부분의 규칙이 항상 100% 적용되는 것은 아니기 때문에, Shopify 내부에서도 여전히 그 문제에 대한 답을 찾고 있고, 여러 예외 사항도 존재합니다. 그러니 여러분에게 맞는 것을 차용하시길 바랍니다.
 
+Table of Contents
+=================
+* [Intro](#intro)
+* [Step Zero: Background](#step-zero-background)
+* [Step One: A Bird's\-Eye View](#step-one-a-birds-eye-view)
+* [Step Two: A Clean Slate](#step-two-a-clean-slate)
+  * [Representing CollectionMemberships](#representing-collectionmemberships)
+  * [Representing Collections](#representing-collections)
+  * [Conclusion](#conclusion)
+* [Step Three: Adding Detail](#step-three-adding-detail)
+  * [Starting point](#starting-point)
+  * [IDs and the Node Interface](#ids-and-the-node-interface)
+  * [Rules and Subobjects](#rules-and-subobjects)
+  * [Lists and Pagination](#lists-and-pagination)
+  * [Strings](#strings)
+  * [IDs and Relations](#ids-and-relations)
+  * [Naming and Scalars](#naming-and-scalars)
+  * [Pagination Again](#pagination-again)
+  * [Enums](#enums)
+* [Step Four: Business Logic](#step-four-business-logic)
+* [Step Five: Mutations](#step-five-mutations)
+  * [Separate Logical Actions](#separate-logical-actions)
+  * [Manipulating Relationships](#manipulating-relationships)
+  * [Input: Structure, Part 1](#input-structure-part-1)
+  * [Input: Scalars](#input-scalars)
+  * [Input: Structure, Part 2](#input-structure-part-2)
+  * [Output](#output)
+* [TLDR: The rules](#tldr-the-rules)
+* [Conclusion](#conclusion-1)
+
 ## Intro
 
 환영합니다! 이 문서는 여러분에게 새로운 graphQL을 (또는 이미 존재하는 graphQL API에 새 API를) 디자인하는 방법을 차근차근 알려줄 겁니다. API 디자인은 반복과 실험, 그리고 여러분의 비즈니스 도메인에 대한 이해가 필요한 어려운 일이지만요.
@@ -42,7 +72,7 @@ interface Collection {
 type AutomaticCollection implements Collection {
   id: ID!
   rules: [AutomaticCollectionRule!]!
-  rulesApplyDisjunctively: Bool!
+  rulesApplyDisjunctively: Boolean!
   memberships: [CollectionMembership!]!
   title: String!
   imageId: ID
@@ -156,7 +186,7 @@ type AutomaticCollectionRule { }
 
 ### Representing Collections
 
-이 API 디자인은 여전히 한 가지 중요한 결함을 갖고 있습니다. 비즈니스 도메인에 대한 이해 없다면, 잘 느껴지지 않을 것입니다.
+이 API 디자인은 여전히 한 가지 중요한 결함을 갖고 있습니다. 비즈니스 도메인에 대한 이해가 없다면, 잘 느껴지지 않을 것입니다.
 
 이 설계에서, 우리는 AutomaticCollections와 ManualCollections를 두 개의 다른 type으로 모델링했습니다. 그리고 이 두 type은 각각 공통적으로 Collection interface를 구현합니다. 직관적으로 보면 타당해 보입니다: 그들 사이에는 많은 공통 field가 존재하지만, 여전히 그들의 관계나 동작 방식은 많이 다르기 때문입니다. (AutomaticCollections는 규칙을 갖고 있죠.)
 
@@ -181,7 +211,7 @@ type CollectionRule { }
 
 ### Conclusion
 
-추상화 단계에서 가장 최고의 API 설계를 선택하려면, 모델링하고 있는 도메인에 대해 깊게 이해하고 있어야 합니다. 튜토리얼 환경에서는 구체적인 주제에 대한 깊은 이해를 제공하기는 힘듭니다. 하지만, collection 디자인은 추론이 가능할 정도로 충분히 간단합니다.
+이 정도의 추상화 단계에서 가장 최고의 API 설계를 선택하려면, 모델링하고 있는 도메인에 대해 깊게 이해하고 있어야 합니다. 튜토리얼 환경에서는 구체적인 주제에 대한 깊은 이해를 제공하기는 힘듭니다. 하지만, collection 디자인은 추론이 가능할 정도로 충분히 간단합니다.
 
 collection에 대해 깊이 이해하고 있지 않더라도, 실제로 모델링하고 있는 비즈니스 영역에 대해서는 깊은 이해가 필요합니다. 여러분의 API를 설계할 때, 이런 어려운 질문을 스스로 던져보고 맹목적으로 구현하지 않는 것은 매우 중요한 일입니다.
 
@@ -211,7 +241,7 @@ collection에 대해 깊이 이해하고 있지 않더라도, 실제로 모델�
 type Collection {
   id: ID!
   rules: [CollectionRule!]!
-  rulesApplyDisjunctively: Bool!
+  rulesApplyDisjunctively: Boolean!
   products: [Product!]!
   title: String!
   imageId: ID
@@ -276,7 +306,7 @@ type Collection implements Node {
 
 type CollectionRuleSet {
   rules: [CollectionRule!]!
-  appliesDisjunctively: Bool!
+  appliesDisjunctively: Boolean!
 }
 
 type CollectionRule {
@@ -351,7 +381,7 @@ type Image {
 
 type CollectionRuleSet {
   rules: [CollectionRule!]!
-  appliesDisjunctively: Bool!
+  appliesDisjunctively: Boolean!
 }
 
 type CollectionRule {
@@ -401,7 +431,7 @@ type Collection implements Node {
 
 type CollectionRuleSet {
   rules: [CollectionRule!]!
-  appliesDisjunctively: Bool!
+  appliesDisjunctively: Boolean!
 }
 
 type CollectionRule {
@@ -450,7 +480,7 @@ enum CollectionRuleRelation {
 ```graphql
 type Collection implements Node {
   # ...
-  hasProduct(id: ID!): Bool!
+  hasProduct(id: ID!): Boolean!
 }
 ```
 
@@ -541,7 +571,7 @@ type Mutation {
 
 input CollectionRuleSetInput {
   rules: [CollectionRuleInput!]!
-  appliesDisjunctively: Bool!
+  appliesDisjunctively: Boolean!
 }
 
 input CollectionRuleInput {
