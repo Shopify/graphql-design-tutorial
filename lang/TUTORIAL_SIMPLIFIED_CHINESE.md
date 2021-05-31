@@ -391,7 +391,7 @@ type CollectionRule {
 
 ### 枚举（Enum）
 
-`CollectionRule` 类型有着 `column`、`relation`、`condition` 三个字段，分布表示要匹配的属性（值如商品表的 `title`字段）、操作符（例如可能是 `=` 或者 `start_with`）以及期望的值。
+`CollectionRule` 类型有着 `column`、`relation`、`condition` 三个字段，分别表示要匹配的属性（值如商品表的 `title`字段）、操作符（例如可能是 `=` 或者 `start_with`）以及期望的值。
 
 考虑到 `column` 是一个数据库术语，因此我们先把这个字段重新命名为 GraphQL 术语—— `field` 会比较符合语义。
 
