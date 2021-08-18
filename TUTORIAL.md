@@ -812,7 +812,7 @@ type Mutation {
   collectionPublish(collectionId: ID!)
   collectionUnpublish(collectionId: ID!)
   collectionAddProducts(collectionId: ID!, productIds: [ID!]!)
-  collectionRemoveProducts(collectionId: ID!, productIds: [ID!])
+  collectionRemoveProducts(collectionId: ID!, productIds: [ID!]!)
   collectionCreate(title: String!, ruleSet: CollectionRuleSetInput, image: ImageInput, description: HTML!)
 }
 
