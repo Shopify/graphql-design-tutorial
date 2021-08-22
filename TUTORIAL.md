@@ -237,7 +237,7 @@ our implementation at some point to permit some third method of choosing
 products (machine learning?) or to permit mixing methods (some rules and some
 manually added products) and *they would still just be collections*. You could
 even argue that the fact we don't permit mixing right now is an implementation
-failure. All of this to say is that the shape of our API should really look more
+failure. All that is to say the shape of our API should really look more
 like this:
 
 ```graphql
