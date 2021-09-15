@@ -122,7 +122,7 @@ type CollectionMembership {
 ```
 
 Esto ya es medianamente complicado a simple vista, a pesar de que solo son cuatro 
-objectos y una interfaz. También está claro que no implementa toda la funcionalidad 
+objetos y una interfaz. También está claro que no implementa toda la funcionalidad 
 que necesitaríamos si vamos a usar esta API para construir, por ejemplo, nuestro
 de la colección de aplicaciones para móviles.
 
@@ -336,7 +336,7 @@ interface Node {
   id: ID!
 }
 ```
-Da una pista al cliente de que este objecto es persistente y extraíble dando un ID, 
+Da una pista al cliente de que este objeto es persistente y extraíble dando un ID, 
 lo que permite al cliente manejar cachés locales de forma precisa y eficiente, además 
 de poder realizar otros trucos. La mayoría de tus objetos principales e 
 identificables de negocio (ej. productos, colecciones, etc.) deben implementar `Node`.
@@ -435,7 +435,7 @@ Este tutorial usa [Connections](https://graphql.org/learn/pagination/#complete-c
 que está definido por el [Relay Connection spec](https://facebook.github.io/relay/graphql/connections.htm).
 
 En este caso, paginar el campo de productos en nuestro diseño es tan simple como 
-cambiar su definición a `products: ProductConnection!`. Asuminengo que has 
+cambiar su definición a `products: ProductConnection!`. Asuminendo que has 
 implementado conexiones, tus tipos se verían así:
 
 ```graphql
@@ -460,7 +460,7 @@ type PageInfo {
 ### Strings
 
 El siguiente es el campo `title`. Este está legítimamente bien tal como está. Es un 
-simple string, y está marcado como no nulo porque todas las colecciones deben tener 
+string simple, y está marcado como no nulo porque todas las colecciones deben tener 
 un título.
 
 *Tip pro: Al igual que los booleanos y las listas, es importante notar que GraphQL 
@@ -812,7 +812,7 @@ type Mutation {
   collectionPublish(collectionId: ID!)
   collectionUnpublish(collectionId: ID!)
   collectionAddProducts(collectionId: ID!, productIds: [ID!]!)
-  collectionRemoveProducts(collectionId: ID!, productIds: [ID!])
+  collectionRemoveProducts(collectionId: ID!, productIds: [ID!]!)
   collectionCreate(title: String!, ruleSet: CollectionRuleSetInput, image: ImageInput, description: HTML!)
 }
 
