@@ -688,6 +688,14 @@ the CRUD paradigm and have just `create`, `delete`, and `update` mutations.
 While this is a decent starting place, it is insufficient for a proper GraphQL
 API.
 
+As a starting point, do not default to the CRUD verb names. Database
+statements are well described using CRUD verbs, but they are implementation
+details that should be hidden from the API consumers. It’s rare that a CRUD verb
+adequately describes a business operation. Instead, consider your domain, context,
+and the action of the mutation. If there’s a more meaningful verb to use, then
+prefer that. For example, don’t use `collectionDelete` if the primary outcome
+is unpublishing a collection; instead name it `collectionUnpublish`.
+
 ### Separate Logical Actions
 
 The first thing we might notice if we were to stick to just CRUD is that our
