@@ -707,6 +707,16 @@ resulting in the following mutation list:
 
 *Rule #14: Write separate mutations for separate logical actions on a resource.*
 
+### Naming the Mutations
+
+As a starting point, do not default to the CRUD verb names. Database
+statements are well described using CRUD verbs, but they are implementation
+details that should be hidden from the API consumers. It’s rare that a CRUD verb
+adequately describes a business operation. Instead, consider your domain, context,
+and the action of the mutation. If there’s a more meaningful verb to use, then
+prefer that. For example, don’t use `collectionDelete` if the primary outcome
+is unpublishing a collection; instead name it `collectionUnpublish`.
+
 ### Manipulating Relationships
 
 The `update` mutation still has far too many responsibilities so it makes sense
