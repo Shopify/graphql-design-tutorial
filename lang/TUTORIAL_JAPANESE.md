@@ -10,6 +10,37 @@
 ほとんどのルールがつねに100%適用可能な訳ではないため、社内のなかでも未だに議論がありますし、例外を設けています。
 ですから、本チュートリアルに盲目的に従ってすべてを取り込もうとせず、あなたの目的や状況に応じて役に立つ部分を適用してください。
 
+目次
+=================
+* [イントロダクション](#イントロダクション)
+* [ステップ０: 背景](#ステップ０:-背景)
+* [ステップ１: 俯瞰的な視点](#ステップ１:-俯瞰的な視点)
+* [ステップ２: 白紙の状態](#ステップ２:-白紙の状態)
+  * [`CollectionMembership`の表現](#CollectionMembershipの表現)
+  * [コレクションの表現](#コレクションの表現)
+  * [結論](#結論)
+* [ステップ３: 詳細を詰める](#ステップ３:-詳細を詰める)
+  * [出発点](#出発点)
+  * [IDと`Node`インターフェース](#IDとNodeインターフェース)
+  * [ルールとサブオブジェクト](#ルールとサブオブジェクト)
+  * [リストとページネーション](#リストとページネーション)
+  * [文字列](#文字列)
+  * [IDと関連](#IDと関連)
+  * [命名とスカラー](#命名とスカラー)
+  * [再びページネーション](#再びページネーション)
+  * [列挙型](#列挙型)
+* [ステップ４: ビジネスロジック](#ステップ４:-ビジネスロジック)
+* [ステップ５: Mutations](#ステップ５:-Mutations)
+  * [論理的なアクションの分割](#論理的なアクションの分割)
+  * [mutationの命名](#mutationの命名)
+  * [関連の操作](#関連の操作)
+  * [入力: 構造 パート１](#入力:-構造-パート１)
+  * [入力: スカラー](#入力:-スカラー)
+  * [入力: 構造 パート２](#入力:-構造-パート２)
+  * [出力](#出力)
+* [TLDR: The rules](#tldr-the-rules)
+* [Conclusion](#conclusion-1)
+
 ## イントロダクション
 
 ようこそ！本ドキュメントでは、新しいGraphQL APIの（あるいは既存のGraphQL APIの拡張の）設計方法をみていきます。
@@ -588,6 +619,15 @@ CRUDに従おうとすると、すぐに`update`が巨大になるというこ�
 
 *ルール #14: リソースに対するロジックの異なる操作にはそれぞれmutationを用意すること。*
 
+### mutationの命名
+
+手始めに、CRUD動詞の名前をデフォルトとするのをやめてください。
+データベースのステートメントは、CRUD動詞を使ってよく記述されていますが、それらはAPI利用者から隠されるべき実装の詳細です。
+CRUD動詞がビジネスを適切に表しているケースは少ないです。
+代わりに、命名したいmutationのドメイン、コンテキスト、挙動をよく考えてください。
+もし、より適切な意味のある動詞があれば、それを使いましょう。
+たとえば、主な結果がコレクションの非公開であれば、`collectionDelete`は使わずに、`collectionUnpublish`としましょう。
+
 ### 関連の操作
 
 `update` mutationは依然として大きすぎる責務を負っているため、引き続き分解を進めましょう。
@@ -670,7 +710,7 @@ type Mutation {
   collectionPublish(collectionId: ID!)
   collectionUnpublish(collectionId: ID!)
   collectionAddProducts(collectionId: ID!, productIds: [ID!]!)
-  collectionRemoveProducts(collectionId: ID!, productIds: [ID!])
+  collectionRemoveProducts(collectionId: ID!, productIds: [ID!]!)
   collectionCreate(title: String!, ruleSet: CollectionRuleSetInput, image: ImageInput, description: HTML!)
 }
 
