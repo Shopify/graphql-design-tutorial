@@ -15,7 +15,7 @@
   * [重新設計 `CollectionMemberships`](#重新設計-collectionmembership)
   * [重新設計「商品系列」](#重新設計商品系列)
   * [小結](#小結)
-* [第三步：Adding Detail](#step-three-adding-detail)
+* [第三步：加入細節](#第三步：加入細節)
   * [Starting point](#starting-point)
   * [IDs and the Node Interface](#ids-and-the-node-interface)
   * [Rules and Subobjects](#rules-and-subobjects)
@@ -25,8 +25,8 @@
   * [Naming and Scalars](#naming-and-scalars)
   * [Pagination Again](#pagination-again)
   * [Enums](#enums)
-* [第四步：Business Logic](#step-four-business-logic)
-* [第五步：Mutations](#step-five-mutations)
+* [第四步：商業邏輯](#第四步：商業邏輯)
+* [第五步：資料修改（mutation）](#第五步：資料修改)
   * [Separate Logical Actions](#separate-logical-actions)
   * [Naming the Mutations](#naming-the-mutations)
   * [Manipulating Relationships](#manipulating-relationships)
@@ -101,7 +101,7 @@ type CollectionMembership {
 
 雖然這個設計只有四種物件跟一個介面，但乍看之下已經頗為複雜。而且這個設計還沒有包括所有所需的功能，例如，我們沒辦法用這個 API 建立在手機應用程式的商品系列功能。
 
-我們先暫時退後一步，試著綜觀全局、重新思考。一個繁複但良好設計的 GraphQL API 通常是由許多物件所組成，再透過多個連結和數十個欄位跟串起物件之間的關聯。想要一步到位、一次完成這麼複雜的設計，往往會造成混亂跟錯誤。正確的作法，應該是由更高階的抽象層級出發，專注於設計型態（types）跟它們之間的關聯，之後再煩惱它們的具體欄位（fields）或變更（mutation）等等。原則上，這就像在[實體關係模型](https://zh.wikipedia.org/zh-tw/ER模型)（Entity-Relationship model）的框架之上，加入一些 GraphQL 特有的設計。這麼一來，我們簡化一下原本初步、粗略的 schema 設計，可以得到下面的結果：
+我們先暫時退後一步，試著綜觀全局、重新思考。一個繁複但良好設計的 GraphQL API 通常是由許多物件所組成，再透過多個連結和數十個欄位跟串起物件之間的關聯。想要一步到位、一次完成這麼複雜的設計，往往會造成混亂跟錯誤。正確的作法，應該是由更高階的抽象層級出發，專注於設計型態（types）跟它們之間的關聯，之後再煩惱它們的具體欄位（fields）或資料修改（mutation）等等。原則上，這就像在[實體關係模型](https://zh.wikipedia.org/zh-tw/ER模型)（Entity-Relationship model）的框架之上，加入一些 GraphQL 特有的設計。這麼一來，我們簡化一下原本初步、粗略的 schema 設計，可以得到下面的結果：
 
 ```graphql
 interface Collection {
@@ -199,6 +199,46 @@ type CollectionRule { }
 盡可能放下包袱，從頭開始。 
 
 *準則三：以你的業務領域為核心進行 API 設計，而非照抄後端資料庫、前端使用者介面的模型或既有的 API 設計。*
+
+## 第三步：加入細節
+
+現在我們有一個乾淨簡潔的抽象模型，是時候重新加入之前省略的欄位，著手考慮更為細節的層級了。
+
+在開始加入細節之前，捫心自問：我們現在真的需要這個欄位嗎？看到資料庫有某個欄位、前端模型有某個屬性或 REST API 有某個屬性，並不代表我們需要自然而然把它放進 GraphQL schema 中。
+
+我們應該根據實際使用需求，決定是否要在 schema 中納入某個元素（欄位、引數、型態等）。在 GraphQL schema 中加入新的元素非常容易；但變更或移除既有的設計往往非常困難，很容易招致整體設計的損壞。
+
+*準則四：新增一個欄位遠比刪掉一個欄位容易。*
+
+### Starting point
+
+### Rules and Subobjects
+
+### Lists and Pagination
+
+###  Strings
+
+### IDs and Relations
+
+### Naming and Scalars
+
+### Pagination Again
+
+### Enums
+
+## 第四步：商業邏輯
+
+## 第五步：資料修改
+
+### Naming the Mutations
+
+### Manipulating Relationships
+
+### Input: Structure, Part 1
+
+### Input: Scalars
+
+### Output
 
 ## TLDR：設計準則
 
