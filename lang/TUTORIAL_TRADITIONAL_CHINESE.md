@@ -9,13 +9,13 @@
 目錄
 =================
 * [引言](#引言)
-* [第零步：背景知識](#第零步：背景知識)
-* [第一步：俯視設計](#第一步：俯視設計)
-* [第二步：重新設計](#第二步：重新設計)
+* [第零步：背景知識](#第零步背景知識)
+* [第一步：俯視設計](#第一步俯視設計)
+* [第二步：重新設計](#第二步重新設計)
   * [重新設計 `CollectionMemberships`](#重新設計-collectionmembership)
   * [重新設計「商品系列」](#重新設計商品系列)
   * [小結](#小結)
-* [第三步：加入細節](#第三步：加入細節)
+* [第三步：加入細節](#第三步加入細節)
   * [Starting point](#starting-point)
   * [IDs and the Node Interface](#ids-and-the-node-interface)
   * [Rules and Subobjects](#rules-and-subobjects)
@@ -25,8 +25,8 @@
   * [Naming and Scalars](#naming-and-scalars)
   * [Pagination Again](#pagination-again)
   * [Enums](#enums)
-* [第四步：商業邏輯](#第四步：商業邏輯)
-* [第五步：資料修改（mutation）](#第五步：資料修改)
+* [第四步：商業邏輯](#第四步商業邏輯)
+* [第五步：資料修改（mutation）](#第五步資料修改)
   * [Separate Logical Actions](#separate-logical-actions)
   * [Naming the Mutations](#naming-the-mutations)
   * [Manipulating Relationships](#manipulating-relationships)
@@ -212,6 +212,8 @@ type CollectionRule { }
 
 ### Starting point
 
+### IDs and the `Node` Interface
+
 ### Rules and Subobjects
 
 ### Lists and Pagination
@@ -230,6 +232,8 @@ type CollectionRule { }
 
 ## 第五步：資料修改
 
+### Separate Logical Actions
+
 ### Naming the Mutations
 
 ### Manipulating Relationships
@@ -237,6 +241,8 @@ type CollectionRule { }
 ### Input: Structure, Part 1
 
 ### Input: Scalars
+
+### Input: Structure, Part 2
 
 ### Output
 
