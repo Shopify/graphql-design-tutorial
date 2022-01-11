@@ -12,7 +12,7 @@
 * [第零步：背景知識](#第零步：背景知識)
 * [第一步：俯視設計](#第一步：俯視設計)
 * [第二步：重新設計](#第二步：重新設計)
-  * [重新設計 `CollectionMemberships`](#重新設計-collectionmemberships)
+  * [重新設計 `CollectionMemberships`](#重新設計-collectionmembership)
   * [重新設計「商品系列」](#重新設計商品系列)
   * [小結](#小結)
 * [第三步：Adding Detail](#step-three-adding-detail)
