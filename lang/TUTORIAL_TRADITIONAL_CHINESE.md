@@ -11,10 +11,10 @@
 * [引言](#引言)
 * [第零步：背景知識](#第零步：背景知識)
 * [第一步：俯視設計](#第一步：俯視設計)
-* [第二步：A Clean Slate](#step-two-a-clean-slate)
-  * [Representing CollectionMemberships](#representing-collectionmemberships)
-  * [Representing Collections](#representing-collections)
-  * [Conclusion](#conclusion)
+* [第二步：重新設計](#第二步：重新設計)
+  * [重新設計 `CollectionMemberships`](#重新設計-%60collectionmemberships%60)
+  * [重新設計「商品系列」](#重新設計「商品系列」)
+  * [小結](#小結)
 * [第三步：Adding Detail](#step-three-adding-detail)
   * [Starting point](#starting-point)
   * [IDs and the Node Interface](#ids-and-the-node-interface)
@@ -132,10 +132,79 @@ type CollectionMembership {
 
 *準則一：永遠記得從更高階的抽象層級出發，先設計物件與它們的關聯，之後再進入到具體欄位。*
 
+## 第二步：重新設計
+
+接下來，我們接續上一步的初階成果，進一步修正其中最關鍵的問題。
+
+我們目前的設計定義了「手動商品系列」（`ManualCollection`）和「自動商品系列」（`AutomaticCollection`）的架構，以及一個合併資料表格 `CollectionMembership`，用來描述「產品與商品系列之間多對多的關係」。這個初始版本很井然有序，與資料庫的實體關係模型完全契合，但這其實是個錯誤的設計方式。
+
+這種設計的根本問題在於，設計 API 跟設計資料庫所關注的目的並不相同，兩者在實作上也經常是在不同的抽象層級。完全依照資料庫端的架構設計 API 會在後續應用上造成很大的麻煩。
+
+### 重新設計 `CollectionMembership`
+
+你可能已經發現，在 schema 中加入合併資料表格 `CollectionMembership` 型態是個很明顯的失誤。這個表格描述了產品與商品系列之間多對多的關係。注意：是「產品與商品系列」之間的關係，從語意、或業務領域的視角來看，這個從屬關係並不具意義；它只是一個需要被實現的技術細節。
+
+換句話說，這個關係不應該出現在我們的 API 中。我們的 API 應該呈現的是業務領域實際應用所需的物件關係：意即對各個商品系列而言，它與其所屬產品的直接關聯。因此，我們可以進一步把 schema 設計修正成：
+
+```graphql
+interface Collection {
+  Image
+  [Product]
+}
+
+type AutomaticCollection implements Collection {
+  [AutomaticCollectionRule]
+  Image
+  [Product]
+}
+
+type ManualCollection implements Collection {
+  Image
+  [Product]
+}
+
+type AutomaticCollectionRule { }
+```
+
+這樣好多了。
+
+*準則二：不要在 API 設計中納入不必要的技術細節。*
+
+### 重新設計「商品系列」
+
+目前這個 API 版本還有一個致命的缺陷，但除非我們非常熟悉業務領域，不然這個缺陷比較難被發現。在目前的設計中，我們替「自動商品系列」和「手動商品系列」分別設計了 `AutomaticCollection` 和 `ManualCollection` 兩個型態，兩者分別實現了同一個介面 `Collection`。直觀看來，這個設計似乎很符合邏輯：它們有許多相同的欄位，但仍在關聯（`AutomaticCollection` 設有選取所屬產品的規則）和某些特性上有所差異。
+
+但從商業模式來看，這些差異基本上也只是技術細節。「商品系列」的定義是一組產品，至於怎麼挑選哪些產品加入列表則是次要的。我們或許會在某個時間點加入第三種選取產品的方法（例如機器學習？），或新增一種同時允許手動跟自動加入產品的商品系列——但不變的是，它們都還是一種「商品系列」。我們甚至可以說，目前商品系列沒有同時允許手動跟自動加入產品這個選項，是個設計上的錯誤。總而言之，我們的 API 應該長得像這樣才對：
+
+```graphql
+type Collection {
+  [CollectionRule]
+  Image
+  [Product]
+}
+
+type CollectionRule { }
+```
+
+這個設計合理多了。或許你會覺得奇怪，手動商品系列並沒有選取所屬產品的條件啊？但注意，這裡的 `CollectionRule` 欄位是一個串列（list）。在這個新的設計中，我們只要指定 `ManualCollection` 的所屬產品選取條件是一個空的串列，就沒問題了。
+
+### 小結
+
+我們需要對所設計的業務領域有非常深入的理解，才能在這個抽象層級選擇最好的 API 設計。我們很難在這份教學文件中提供更深入的範例，更全面演示在真實應用情境中這些設計需求是多麼複雜；不過希望上述「商品系列」的例子雖然簡單，但已經充分闡述了背後的理論與邏輯。在設計 API 時，深入理解業務領域，設想各式各樣複雜的實際使用情境，反覆地由此自我拷問，是很重要的；切記不要盲目地照本宣科、在 API 設計上直接複製貼上實作的技術細節。
+
+值得一提的是，一個良好的 API 設計也不應該是仿照使用者介面的建模。後端的 API 實作執行和前端的使用者介面都可以是很好的設計參考和靈感來源，但最終 API 設計所關注的是業務領域的應用情境。
+
+更為重要的一點：我們並不必然需要照搬原有的 REST API 設計（如果有的話）。REST 跟 GraphQL 有著不同的設計準則：某個在 REST API 中很棒的設計，並不必然適用在 GraphQL API。
+
+盡可能放下包袱，從頭開始。 
+
+*準則三：以你的業務領域為核心進行 API 設計，而非照抄後端資料庫、前端使用者介面的模型或既有的 API 設計。*
+
 ## TLDR：設計準則
 
 - 準則一：永遠記得從更高階的抽象層級出發，先設計物件與它們的關聯，之後再進入到具體欄位。
-- 準則二：Never expose implementation details in your API design.
+- 準則二：不要在 API 設計中納入不必要的技術細節。
+- 準則三：以你的業務領域為核心進行 API 設計，而非照抄後端資料庫、前端使用者介面的模型或既有的 API 設計。
 
 ## 結語
 
