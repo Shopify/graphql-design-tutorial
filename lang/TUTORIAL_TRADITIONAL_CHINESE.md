@@ -55,3 +55,79 @@
 * 就像我們可以上、下架產品一樣，我們也可以設定商品系列的狀態，是否發佈在商場網站上。
 
 有了這些背景知識，我們可以開始思考如何設計 API。
+
+## 第一步：俯視設計
+
+一個最初步、粗略的 schema 設計可能類似這樣（這裡暫時不羅列 `Product`等既有的型態）：
+
+```graphql
+interface Collection {
+  id: ID!
+  memberships: [CollectionMembership!]!
+  title: String!
+  imageId: ID
+  bodyHtml: String
+}
+
+type AutomaticCollection implements Collection {
+  id: ID!
+  rules: [AutomaticCollectionRule!]!
+  rulesApplyDisjunctively: Boolean!
+  memberships: [CollectionMembership!]!
+  title: String!
+  imageId: ID
+  bodyHtml: String
+}
+
+type ManualCollection implements Collection {
+  id: ID!
+  memberships: [CollectionMembership!]!
+  title: String!
+  imageId: ID
+  bodyHtml: String
+}
+
+type AutomaticCollectionRule {
+  column: String!
+  relation: String!
+  condition: String!
+}
+
+type CollectionMembership {
+  collectionId: ID!
+  productId: ID!
+}
+```
+
+雖然這個設計只有四種物件跟一個介面，但乍看之下已經頗為複雜。而且這個設計還沒有包括所有所需的功能，例如，我們沒辦法用這個 API 建立在手機應用程式的商品系列功能。
+
+我們先暫時退後一步，試著綜觀全局、重新思考。一個繁複但良好設計的 GraphQL API 通常是由許多物件所組成，再透過多個連結和數十個欄位跟串起物件之間的關聯。想要一步到位、一次完成這麼複雜的設計，往往會造成混亂跟錯誤。正確的作法，應該是由更高階的抽象層級出發，專注於設計型態（types）跟它們之間的關聯，之後再煩惱它們的具體欄位（fields）或變更（mutation）等等。原則上，這就像在[實體關係模型](https://zh.wikipedia.org/zh-tw/ER模型)（Entity-Relationship model）的框架之上，加入一些 GraphQL 特有的設計。這麼一來，我們簡化一下原本初步、粗略的 schema 設計，可以得到下面的結果：
+
+```graphql
+interface Collection {
+  Image
+  [CollectionMembership]
+}
+
+type AutomaticCollection implements Collection {
+  [AutomaticCollectionRule]
+  Image
+  [CollectionMembership]
+}
+
+type ManualCollection implements Collection {
+  Image
+  [CollectionMembership]
+}
+
+type AutomaticCollectionRule { }
+
+type CollectionMembership {
+  Collection
+  Product
+}
+```
+
+在這個簡化的版本，我們移除了所有純量的欄位、欄位名稱和是否接受空值等，目前暫時不需要注意的細節。剩下的這個只保有輪廓、類似 GraphQL 的東西，讓我們可以聚焦在更高階的型態和關聯設計。
+
+*準則一：永遠記得從更高階的抽象層級出發，先設計物件與它們的關聯，之後再進入到具體欄位。*
