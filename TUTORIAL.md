@@ -44,6 +44,11 @@ Table of Contents
   * [Output](#output)
 * [TLDR: The rules](#tldr-the-rules)
 * [Conclusion](#conclusion-1)
+* [Appendix: Polymorphism](#appendix-polymorphism)
+  * [No Shared Behaviour](#no-shared-behaviour)
+  * [Simple Shared Behaviour](#simple-shared-behaviour)
+  * [Complex Shared Behaviour: Base Interfaces](#complex-shared-behaviour-base-interfaces)
+  * [Complex Shared Behaviour: Push-Down Polymorphism](#complex-shared-behaviour-push-down-polymorphism)
 
 ## Intro
 
@@ -1032,3 +1037,124 @@ Thank you for reading our tutorial! Hopefully by this point you have a solid
 idea of how to design a good GraphQL API.
 
 Once you've designed an API you're happy with, it's time to implement it!
+
+## Appendix: Polymorphism
+
+In the tutorial above, in the section on [representing Collections](#representing-collections), we deal very briefly with one example of a polymorphic type (the originally proposed Collection interface) and reduce it down to a single non-polymorphic Collection type by focusing on which concepts belong in the API, and which ones are implementation details.
+
+While hopefully enlightening, this example was not rich enough to let us explore the full complexity of polymorphic types in GraphQL (both [Interfaces](https://graphql.org/learn/schema/#interfaces) and [Unions](https://graphql.org/learn/schema/#union-types)) and how they should be used.
+
+Broadly speaking, there are four different approaches to modelling polymorphism in GraphQL, and each one is appropriate for a different set of use cases. This appendix will touch on each case in turn using a broader set of examples than the main tutorial.
+
+### No Shared Behaviour
+
+Probably the simplest case is when your concrete objects are related semantically but don't have any shared fields or
+behaviours associated with that relationship. For example, you may have a Product type and a Collection type that can both be returned as search results, but that don't share any search-result-specific fields (even if they may share other fields for other reasons). In this case, use a union:
+
+```graphql
+type Product {
+  # some fields
+}
+
+type Collection {
+  # some other fields
+}
+
+union SearchResult = Product | Collection
+```
+
+The SearchResult union captures the relationship between the types without implying any shared behaviour. Of course if there *are* shared fields specific to being a search result, then you want to capture that in the schema, in which case a union isn't the best choice.
+
+### Simple Shared Behaviour
+
+Another very simple case is when you have a few shared fields related to a simple behaviour that is shared. For example,
+Products and Collections might both be viewable on the public internet at a canonical URL, and thus have a URL field in GraphQL. This relationship can be expressed with an interface:
+
+```graphql
+interface HasPublicUrl {
+  publicUrl: Url
+}
+
+type Product implements HasPublicUrl {
+  publicUrl: Url
+  # some fields
+}
+
+type Collection implements HasPublicUrl {
+  publicUrl: Url
+  # some other fields
+}
+```
+
+This works really well for simple cases, but breaks down when the shared behaviour is quite complex with many fields,
+or when there are many interelated shared behaviours.
+
+### Complex Shared Behaviour: Base Interfaces
+
+When facing complex shared behaviour, the intuitive default for many people is to use a "base" interface similar to
+how you'd use class inheritance in many object-oriented programming languages. For an example, consider the various packages used to ship goods around the world. There are many different kinds of shipping packages (boxes, tubes, envelopes, etc.) each with their own specific set of physical dimensions; however, there are also many properties shared by all shipping packages, regardless of type. One way to model this situation would be with an interface as follows:
+
+```graphql
+interface ShippingPackage {
+  # Many common fields...
+}
+
+type ShippingPackageBox implements ShippingPackage {
+  # Many common fields...
+  height: Float!
+  width: Float!
+  depth: Float!
+}
+
+type ShippingPackageTube implements ShippingPackage {
+  # Many common fields...
+  length: Float!
+  diameter: Float!
+}
+```
+
+This approach works reasonably well in some cases, but we can usually do better.
+Base interfaces have a couple of drawbacks and edge cases to be aware of:
+
+* If the types only differ across one fairly narrow dimension (as shipping packages here only differ by their actual physical dimensions), then that isn't obvious from the schema, since you have to visually prune out the many shared fields to notice the ones that are different.
+* If the set of shared fields is large it results in a somewhat bloated schema, since those fields are duplicated
+across all of the concrete types (especially if there are many concrete types).
+* If the types in question differ across multiple independent and cross-cutting dimensions, then you have to manually generate concrete types for all of the possible combinations, and you quickly end up with an inordinate number of concrete types.
+
+### Complex Shared Behaviour: Push-Down Polymorphism
+
+The other common approach to complex cases like our Shipping Package example is to use "push-down" polymorphism, where you create a single concrete type to represent the base object, and "push" the polymorphism down into the fields of that type using nullability and unions. It might looks like this:
+
+```graphql
+# Only contains the fields that differed for ShippingPackageBox
+type ShippingBoxDimensions {
+  height: Float!
+  width: Float!
+  depth: Float!
+}
+
+# Only contains the fields that differed for ShippingPackageTube
+type ShippingTubeDimensions {
+  length: Float!
+  diameter: Float!
+}
+
+union ShippingPackageDimensions = ShippingBoxDimensions | ShippingTubeDimensions
+
+# Only use one primary concrete type for all shipping packages
+type ShippingPackage {
+  # Many common fields...
+
+  # Push down the differences to the field-level
+  dimensions: ShippingPackageDimensions!
+}
+```
+
+This addresses our main concerns with the base interface approach:
+
+* There's only one "kind" of item in the API, so it's no longer important to know how the kinds differ.
+* Fields that are shared between the various entities are not repeated unnecessarily.
+* If the types differ along multiple dimensions then your API naturally supports all of the possible combinations without an explosion of concrete types.
+
+Of course depending on the use case this may have drawbacks too. If you don't want to support all the possible
+combinations across a few dimensions then a more inheritance-like approach might serve you better. Choose the approach that you think most cleanly represents your business domain.
