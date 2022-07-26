@@ -28,6 +28,7 @@ Table of Contents
 * [Step Four: Business Logic](#step-four-business-logic)
 * [Step Five: Mutations](#step-five-mutations)
   * [Separate Logical Actions](#separate-logical-actions)
+  * [Naming the Mutations](#naming-the-mutations)
   * [Manipulating Relationships](#manipulating-relationships)
   * [Input: Structure, Part 1](#input-structure-part-1)
   * [Input: Scalars](#input-scalars)
