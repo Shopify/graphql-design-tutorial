@@ -28,6 +28,7 @@ Table of Contents
 * [Step Four: Business Logic](#step-four-business-logic)
 * [Step Five: Mutations](#step-five-mutations)
   * [Separate Logical Actions](#separate-logical-actions)
+  * [Naming the Mutations](#naming-the-mutations)
   * [Manipulating Relationships](#manipulating-relationships)
   * [Input: Structure, Part 1](#input-structure-part-1)
   * [Input: Scalars](#input-scalars)
@@ -35,6 +36,11 @@ Table of Contents
   * [Output](#output)
 * [TLDR: The rules](#tldr-the-rules)
 * [Conclusion](#conclusion-1)
+* [Appendix: Polymorphism](#appendix-polymorphism)
+  * [No Shared Behaviour](#no-shared-behaviour)
+  * [Simple Shared Behaviour](#simple-shared-behaviour)
+  * [Complex Shared Behaviour: Base Interfaces](#complex-shared-behaviour-base-interfaces)
+  * [Complex Shared Behaviour: Push-Down Polymorphism](#complex-shared-behaviour-push-down-polymorphism)
 
 ## Intro
 
@@ -506,6 +512,15 @@ type Collection implements Node {
 
 *규칙 #14: 리소스 각각의 논리적 행위(action)에 맞는 각각의 mutation을 써보세요.*
 
+### Naming the Mutations
+
+CRUD 동사를 기본값으로 시작하지 마세요. 데이터베이스 문장은 CRUD를 이용해 잘 
+표현할 수 있지만, 이런 것은 API 사용자에게 숨겨야 하는 세부 구현사항입니다.
+CRUD 동사가 비즈니스 도메인을 제대로 설명하기는 힘듭니다. 대신에 여러분의 도메인, 맥락,
+mutation의 동작을 고려하세요. 이런 의미를 좀 더 적절하게 설명할 수 있는 단어를 사용하세요.
+예를 들어, 컬렉션의 게시 철회가 기본 결과라면 `collectionDelete` 대신 `collectionUnpublish`라고 
+이름 지어주세요.
+
 ### Manipulating Relationships
 
 `update` mutation은 여전히 너무 많은 역할을 갖고 있습니다. 그러니 이것을 분리하는 작업을 계속해봅시다. 하지만, 우리는 이 행위들(actions)을 개별적으로 다룰 것입니다. 다른 차원으로부터 생각해보는 것 또한 가치 있는 일이 될테니까요: 객체의 관계(예: 일대다, 다대다) 조작. 우리는 이미 'ID 사용 vs 객체 끼워넣기(embedding)', 그리고 API 조회에 있어 '페이지네이션 vs 배열' 사용을 고려해봤습니다. 여기에는 그 관계들을 변형시킬 때 다뤄야 할 비슷한 이슈가 있습니다.
@@ -706,3 +721,127 @@ type CollectionUpdatePayload {
 
 API를 설계했다면, 이제는 그것을 구현해보세요!
 
+
+## Appendix: Polymorphism
+
+위 튜토리얼의 [Collections](#representing-collectionmemberships) 섹션에서, 다형성의 한 가지 예(원래 제안된 Collection 인터페이스)를 매우 간략하게 다루고 
+그걸 API 관련된 개념을 담은 단일 비다형 Collection과 세부적인 구현을 담은 것으로 단순화해봤습니다.
+
+도움이 되었길 바라지만, 이 예시는 GraphQL이 제공하는 다양한 다형 타입들
+([Interfaces](https://graphql.org/learn/schema/#interfaces)와 [Unions](https://graphql.org/learn/schema/#union-types) 모두)과
+그것들을 사용하는 방법을 다 다루고 있지는 못합니다.
+
+GraphQL에서 다형성을 모델링하는 데는 크게 네 가지 다른 접근법이 있습니다.
+그리고 각각은 서로 다른 사용 사례에 적합합니다.
+이 부록에서는 기본 자습서보다 좀 더 넓은 범위의 예제를 사용하여 각 접근법을 차례로 설명합니다.
+
+### No Shared Behaviour
+
+아마도 가장 간단한 경우는 객체들이 의미적으로 연관되어 있지만 공유된 필드나 연관된 어떤 동작도 없는 경우일 것입니다.
+예를 들어 Product 타입과 Collection 타입은 검색에 관련된 어떤 필드나 동작도 공유하지 않지만, 함께 검색 결과로 반환될 수 있습니다.
+(다른 이유로 필드들을 공유할 수는 있겠지만요). 이런 경우, Union을 사용하세요.
+
+```graphql
+type Product {
+  # some fields
+}
+type Collection {
+  # some other fields
+}
+union SearchResult = Product | Collection
+```
+
+SearchResult union은 어떤 공통 행위도 암시하지 않고 타입 사이의 관계를 담아냅니다.
+물론 검색 결과에만 해당하는 *공유 필드가 있는 경우* 스키마에 해당 필드를 담아낼 수 있습니다. 이 경우 Union은 최선의 선택은 아닙니다.
+
+### Simple Shared Behaviour
+
+또 다른 매우 간단한 경우는 단순한 동작을 공유하고 관련한 필드를 몇 개 공유하는 경우입니다. 예를 들어,
+Product 및 Collection은 인터넷에서 볼 수 있는 URL이 있으므로 GraphQL에 URL 필드가 있습니다. 
+이런 관계는 인터페이스로 표현할 수 있습니다.
+
+```graphql
+interface HasPublicUrl {
+  publicUrl: Url
+}
+type Product implements HasPublicUrl {
+  publicUrl: Url
+  # some fields
+}
+type Collection implements HasPublicUrl {
+  publicUrl: Url
+  # some other fields
+}
+```
+
+이런 접근은 간단한 경우에서는 매우 잘 작동하지만, 상당히 많은 필드와 함께 공유하는 동작이나 공유하는 동작이 많을 경우
+제대로 작동하지 않습니다.
+
+### Complex Shared Behaviour: Base Interfaces
+
+복잡한 행동을 공유해야할 때, 사람들은 직관적으로 "base" 인터페이스를 사용해서 문제를 해결하려고 합니다.
+많은 객체 지향 프로그래밍 언어에서 클래스 상속을 사용하는 것과 유사하게 말이죠.
+예를 들어, 전 세계로 상품을 운송할 때 사용하는 운송 패키지(상자, 튜브, 봉투 등)를 생각해봅시다. 이들에게는 각각 고유한 물리적 치수가 있습니다.
+그러나 유형에 관계없이 모든 배송 패키지가 공유하는 많은 속성도 있습니다. 
+다음과 같은 인터페이스를 사용해 이 상황을 모델링할 수 있습니다.
+
+```graphql
+interface ShippingPackage {
+  # Many common fields...
+}
+type ShippingPackageBox implements ShippingPackage {
+  # Many common fields...
+  height: Float!
+  width: Float!
+  depth: Float!
+}
+type ShippingPackageTube implements ShippingPackage {
+  # Many common fields...
+  length: Float!
+  diameter: Float!
+}
+```
+
+이 접근 방식은 어떤 경우에는 상당히 잘 작동하지만, 이것보다 더 나은 접근 방법이 있는 경우가 많습니다.
+기본 인터페이스에는 유념해야할 몇 가지 단점과 엣지 케이스가 있습니다.
+
+* 유형이 상당히 좁은 한 차원에서만 다른 경우(여기서 배송 패키지는 실제 물리적 치수에 의해서만 다르듯이) 스키마에서 찾아내기는 힘듭니다.
+ 동일한 여러 필드들 사이에 숨어 있는 하나의 작은 차이점을 발견하는 건 쉽지 않으니까요.
+* 공유하는 필드가 많으면 필드 집합이 크면 해당 필드가 모든 인터페이스를 상속한 구체적 타입에 중복되므로 스키마가 다소 비대해집니다. (특히 구체적 타입이 많을 경우)
+* 문제가 되는 유형이 여러 독립적인 타입들에 횡단으로 넓게 퍼져있다면, 가능한 모든 조합에 대한 타입을 만들어야 합니다. 결과적으로 지나치게 많은 타입이 생겨납니다.
+
+### Complex Shared Behaviour: Push-Down Polymorphism
+
+Shipping Package 예제와 같은 복잡한 사례에 대한 다른 일반적인 접근 방식은 "푸시다운" 다형성을 사용하는 것입니다. 
+기본 객체를 나타내는 단일 콘크리트 유형을 생성하고 
+nullability와 union을 사용하여 다형성을 해당 유형의 필드에 "푸시"합니다. 다음과 같습니다.
+
+```graphql
+# ShippingPackageBox에 대해 다른 필드들만 가진다
+type ShippingBoxDimensions {
+  height: Float!
+  width: Float!
+  depth: Float!
+}
+# ShippingPackageTube에 대해 다른 필드들만 가진다
+type ShippingTubeDimensions {
+  length: Float!
+  diameter: Float!
+}
+union ShippingPackageDimensions = ShippingBoxDimensions | ShippingTubeDimensions
+# shipping packages를 위해 이 타입만 이용한다
+type ShippingPackage {
+  # 공통 필드들...
+  # 차이들을 field-level로 "푸시다운" 한다
+  dimensions: ShippingPackageDimensions!
+}
+```
+
+이는 기본 인터페이스 접근 방식의 주요 문제를 해결합니다:
+
+* API에는 하나의 종류만 있으므로, 그것들이 어떻게 다른지는 알 필요가 없습니다.
+* 다양한 타입들이 공유하는 필드를 반복하지 않아도 됩니다.
+* 여러 차원을 따라 타입이 다를 경우 API는 구체적 타입의 폭발 없이 가능한 모든 조합을 자연스럽게 지원합니다.
+
+물론, 이것도 만병통치약은 아닙니다. 가능한 모든 조합을 지원하고 싶지 않다면, 상속과 유사한 접근이 더 효과적일 수 있습니다.
+당신의 비즈니스 도메인을 가장 잘 나타내는 방법을 선택하세요.
