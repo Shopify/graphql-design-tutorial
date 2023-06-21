@@ -39,7 +39,7 @@
   * [入力: 構造 パート２](#入力:-構造-パート２)
   * [出力](#出力)
 * [TLDR: The rules](#tldr-the-rules)
-* [Conclusion](#conclusion-1)
+* [Conclusion](#conclusion)
 
 ## イントロダクション
 
