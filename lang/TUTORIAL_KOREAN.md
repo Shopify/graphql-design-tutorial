@@ -153,7 +153,7 @@ API를 다루기 좀 더 간단하게 만들었습니다. 이제 이 설계에 �
 
 이 접근 방법의 가장 근본적인 문제는, API는 '구현과는 다른 목적을 위해 동작하며, 빈번하게 다른 추상화 수준에서 동작한다'는 것입니다. 이 경우, 우리의 구현은 많은 다른 프론트 단에서 실수를 유발하도록 할 수 있습니다.
 
-### Representing `CollectionMembership`s
+### Representing `CollectionMemberships`
 
 가장 눈에 띄는 명확한 사실은 스키마 안에 `CollectionMembership` type이 포함되어 있다는 것입니다. collection memberships table은 product와 collection들 간의 다대다 관계를 표현하기 위해 사용됩니다.
 
