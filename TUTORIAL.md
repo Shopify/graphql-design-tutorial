@@ -170,9 +170,10 @@ To get this simplified representation, I took out all scalar fields, all field
 names, and all nullability information. What you're left with still looks kind
 of like GraphQL, but it lets you focus on the types and their relationships from a higher level.
 
-*<a href="#user-content-start-with-high-level-view" id="user-content-start-with-high-level-view">Rule:</a>
-Always start with a high-level view of the objects and their relationships
-before you deal with specific fields.*
+*<a href="#user-content-start-with-high-level-view"
+id="user-content-start-with-high-level-view">Rule:</a> Always start with a
+high-level view of the objects and their relationships before you deal with
+specific fields.*
 
 ## Step Two: A Clean Slate
 
@@ -224,7 +225,9 @@ type AutomaticCollectionRule { }
 
 This is much better.
 
-*Rule #2: Never expose implementation details in your API design.*
+*<a href="#user-content-never-expose-implementation-details"
+id="user-content-never-expose-implementation-details">Rule:</a> Never expose
+implementation details in your API design.*
 
 ### Representing Collections
 
@@ -285,8 +288,9 @@ GraphQL.
 
 As much as possible let go of your baggage and start from scratch.
 
-*Rule #3: Design your API around the business domain, not the implementation,
-user-interface, or legacy APIs.*
+*<a href="#user-content-design-around-business-domain"
+id="user-content-design-around-business-domain">Rule:</a> Design your API around
+the business domain, not the implementation, user-interface, or legacy APIs.*
 
 ## Step Three: Adding Detail
 
@@ -302,7 +306,9 @@ actual need and use case. GraphQL schemas can easily be evolved by adding
 elements, but changing or removing them are breaking changes and much more
 difficult.
 
-*Rule #4: It's easier to add fields than to remove them.*
+*<a href="#user-content-easier-to-add-than-remove"
+id="user-content-easier-to-add-than-remove">Rule:</a> It's easier to add fields
+than to remove them.*
 
 ### Starting point
 
@@ -354,7 +360,7 @@ type Collection implements Node {
 }
 ```
 
-*Rule #5: Major business-object types should always implement `Node`.*
+*<a href="#user-content-business-object-types-implement-node" id="user-content-business-object-types-implement-node">Rule:</a> Major business-object types should always implement `Node`.*
 
 ### Rules and Subobjects
 
@@ -417,7 +423,9 @@ nullable boolean, make sure there is real semantic value in being able to
 distinguish between all three states (null/false/true) and that it doesn't
 indicate a bigger design flaw.*
 
-*Rule #6: Group closely-related fields together into subobjects.*
+*<a href="#user-content-group-related-into-subobjects"
+id="user-content-group-related-into-subobjects">Rule:</a> Group closely-related
+fields together into subobjects.*
 
 ### Lists and Pagination
 
@@ -460,7 +468,9 @@ type PageInfo {
 ```
 
 
-*Rule #7: Always check whether list fields should be paginated or not.*
+*<a href="#user-content-check-if-list-should-be-paginated"
+id="user-content-check-if-list-should-be-paginated">Rule:</a> Always check
+whether list fields should be paginated or not.*
 
 ###  Strings
 
@@ -518,7 +528,9 @@ type CollectionRule {
 }
 ```
 
-*Rule #8: Always use object references instead of ID fields.*
+*<a href="#user-content-use-object-refs"
+id="user-content-use-object-refs">Rule:</a> Always use object references instead
+of ID fields.*
 
 ### Naming and Scalars
 
@@ -528,8 +540,10 @@ obvious what this field is for; it's the body description of the specific
 collection. The first thing we can do to make this API better is just to rename
 it to `description`, which is a much clearer name.
 
-*Rule #9: Choose field names based on what makes sense, not based on the
-implementation or what the field is called in legacy APIs.*
+*<a href="#user-content-choose-names-that-make-sense"
+id="user-content-choose-names-that-make-sense">Rule:</a> Choose field names
+based on what makes sense, not based on the implementation or what the field is
+called in legacy APIs.*
 
 Next, we can make it non-nullable. As we talked about with the title field, it
 doesn't make sense to distinguish between the field being null and simply being
@@ -551,8 +565,9 @@ custom scalars to see if one of them would be a better fit. If you're adding a
 field and you think a new custom scalar would be appropriate, it's worth talking
 it over with your team to make sure you're capturing the right concept.
 
-*Rule #10: Use custom scalar types when you're exposing something with specific
-semantic value.*
+*<a href="#user-content-custom-scalar-types"
+id="user-content-custom-scalar-types">Rule:</a> Use custom scalar types when
+you're exposing something with specific semantic value.*
 
 ### Pagination Again
 
@@ -621,7 +636,9 @@ enum CollectionRuleRelation {
 }
 ```
 
-*Rule #11: Use enums for fields which can only take a specific set of values.*
+*<a href="#user-content-use-enums-for-value-sets"
+id="user-content-use-enums-for-value-sets">Rule:</a> Use enums for fields which
+can only take a specific set of values.*
 
 ## Step Four: Business Logic
 
@@ -650,9 +667,10 @@ more than one client, and if each of those clients has to implement the same
 logic then you've effectively got code duplication, with all the extra work and
 room for error which that entails.
 
-*Rule #12: The API should provide business logic, not just data. Complex
-calculations should be done on the server, in one place, not on the client, in
-many places.*
+*<a href="#user-content-complex-calculations-on-server"
+id="user-content-complex-calculations-on-server">Rule:</a> The API should
+provide business logic, not just data. Complex calculations should be done on
+the server, in one place, not on the client, in many places.*
 
 Back to our client use-case, the best answer here is to provide a new field
 specifically dedicated to solving this problem. Practically, this looks like:
@@ -677,7 +695,9 @@ predict all of the logic a client is going to want, and there isn't always an
 easy channel for clients to ask for additional fields (though you should strive
 to ensure such a channel exists as much as possible).
 
-*Rule #13: Provide the raw data too, even when there's business logic around it.*
+*<a href="#user-content-provide-raw-data"
+id="user-content-provide-raw-data">Rule:</a> Provide the raw data too, even when
+there's business logic around it.*
 
 Finally, don't let business-logic fields affect the overall shape of the API.
 The business domain data is still the core model. If you're finding the business
@@ -712,7 +732,9 @@ resulting in the following mutation list:
 - publish
 - unpublish
 
-*Rule #14: Write separate mutations for separate logical actions on a resource.*
+*<a href="#user-content-separate-mutations"
+id="user-content-separate-mutations">Rule:</a> Write separate mutations for
+separate logical actions on a resource.*
 
 ### Naming the Mutations
 
@@ -770,8 +792,10 @@ of factors to consider:
   would require rules to be individually identifiable and that feels like
   overkill.
 
-*Rule #15: Mutating relationships is really complicated and not easily
- summarized into a snappy rule.*
+*<a href="#user-content-mutating-relationships-is-hard"
+id="user-content-mutating-relationships-is-hard">Rule:</a> Mutating
+relationships is really complicated and not easily summarized into a snappy
+rule.*
 
  If you stir all of this together, for collections we end up with the following
  list of mutations:
@@ -793,8 +817,10 @@ Finally, you may note our product mutations act on sets of products, for example
 since the common use case when manipulating this relationship will be to add,
 remove, or reorder more than one product at a time.
 
-*Rule #16: When writing separate mutations for relationships, consider whether
- it would be useful for the mutations to operate on multiple elements at once.*
+*<a href="#user-content-consider-mutations-on-multiple-elements"
+id="user-content-consider-mutations-on-multiple-elements">Rule:</a> When writing
+separate mutations for relationships, consider whether it would be useful for
+the mutations to operate on multiple elements at once.*
 
 ### Input: Structure, Part 1
 
@@ -851,8 +877,10 @@ grouping or otherwise organizing mutations, so we are forced into
 alphabetization as a workaround. Putting the core type first ensures that all of
 the related mutations group together in the final list.
 
-*Rule #17: Prefix mutation names with the object they are mutating for
- alphabetical grouping (e.g. use `orderCancel` instead of `cancelOrder`).*
+*<a href="#user-content-prefix-mutation-names-for-alphabetical-grouping"
+id="user-content-prefix-mutation-names-for-alphabetical-grouping">Rule:</a>
+Prefix mutation names with the object they are mutating for alphabetical
+grouping (e.g. use `orderCancel` instead of `cancelOrder`).*
 
 ### Input: Scalars
 
@@ -868,8 +896,9 @@ from creating collections if they don't provide a description (or equivalently,
 we don't want to force them to provide a useless `""`), so we should make
 `description` non-required.
 
-*Rule #18: Only make input fields required if they're actually semantically
- required for the mutation to proceed.*
+*<a href="#user-content-semantically-required"
+id="user-content-semantically-required">Rule:</a> Only make input fields
+required if they're actually semantically required for the mutation to proceed.*
 
 The other issue with `description` is its type; this may seem counter-intuitive
 since it is already strongly-typed (`HTML` instead of `String`) and we've been
@@ -883,10 +912,12 @@ process, we intentionally weakly type input fields when it might be difficult
 for the client to validate up-front. This lets the business-logic side handle
 all of the validation, and lets the client only deal with errors from one spot.
 
-*Rule #19: Use weaker types for inputs (e.g. `String` instead of `Email`) when
- the format is unambiguous and client-side validation is complex. This lets the
- server run all non-trivial validations at once and return the errors in a
- single place in a single format, simplifying the client.*
+*<a href="#user-content-use-weaker-types-in-complex-cases"
+id="user-content-use-weaker-types-in-complex-cases">Rule:</a> Use weaker types
+for inputs (e.g. `String` instead of `Email`) when the format is unambiguous and
+client-side validation is complex. This lets the server run all non-trivial
+validations at once and return the errors in a single place in a single format,
+simplifying the client.*
 
 It is important to note, though, that this is not an invitation to weakly-type
 all your inputs. We still use strongly-typed enums for the `field` and
@@ -898,10 +929,12 @@ is quite complex to validate. On the other hand, there are hundreds of ways to
 represent a date or time as a string, all of them reasonably simple, so it
 benefits from a strong scalar type to specify which format we expect.
 
-*Rule #20: Use stronger types for inputs (e.g. `DateTime` instead of `String`)
- when the format may be ambiguous and client-side validation is simple. This
- provides clarity and encourages clients to use stricter input controls (e.g. a
- date-picker widget instead of a free-text field).*
+*<a href="#user-content-use-stronger-types-in-simple-cases"
+id="user-content-use-stronger-types-in-simple-cases">Rule:</a> Use stronger
+types for inputs (e.g. `DateTime` instead of `String`) when the format may be
+ambiguous and client-side validation is simple. This provides clarity and
+encourages clients to use stricter input controls (e.g. a date-picker widget
+instead of a free-text field).*
 
 ### Input: Structure, Part 2
 
@@ -949,8 +982,10 @@ input CollectionInput {
 }
 ```
 
-*Rule #21: Structure mutation inputs to reduce duplication, even if this
- requires relaxing requiredness constraints on certain fields.*
+*<a href="#user-content-reduce-mutation-duplication"
+id="user-content-reduce-mutation-duplication">Rule:</a> Structure mutation
+inputs to reduce duplication, even if this requires relaxing requiredness
+constraints on certain fields.*
 
 As in the example above, `collectionUpdate` takes two arguments. The first
 selects the collection to update, and the second provides the update data. An
@@ -960,9 +995,7 @@ pattern](https://shopify.dev/docs/api/admin-graphql/2023-07/mutations/productUpd
 However, this  is no longer recommended, as it makes it difficult to determine
 which parts of the call relate to 'select', and which relate to 'update'.
 
-*Rule #22: For update mutations, the parameter relating to selecting the entry
-must be separate to the parameter providing the change data. The parameter
-relating to selecting the entry must come first.*
+*<a href="#user-content-mutation-select-before-update" id="user-content-mutation-select-before-update">Rule:</a> For update mutations, the parameter relating to selecting the entry must be separate to the parameter providing the change data. The parameter relating to selecting the entry must come first.*
 
 ### Output
 
@@ -994,9 +1027,10 @@ would return the newly-created collection for the `collection` field. An
 unsuccessful mutation would return one or more `UserError` objects, and `null`
 for the collection.
 
-*Rule #23: Mutations should provide user/business-level errors via a
- `userErrors` field on the mutation payload. The top-level query errors entry is
- reserved for client and server-level errors.*
+*<a href="#user-content-use-usererrors"
+id="user-content-use-usererrors">Rule:</a> Mutations should provide
+user/business-level errors via a `userErrors` field on the mutation payload. The
+top-level query errors entry is reserved for client and server-level errors.*
 
 In many implementations, much of this structure is provided automatically, and
 all you will have to define is the `collection` return field.
@@ -1014,36 +1048,37 @@ It's worth noting that `collection` is still nullable even here, since if the
 provided ID doesn't represent a valid collection, there is no collection to
 return.
 
-*Rule #24: Most payload fields for a mutation should be nullable, unless there
- is really a value to return in every possible error case.*
+*<a href="#user-content-allow-nullable-fields-in-mutations"
+id="user-content-allow-nullable-fields-in-mutations">Rule:</a> Most payload
+fields for a mutation should be nullable, unless there is really a value to
+return in every possible error case.*
 
 ## TLDR: The rules
 
-- Rule #1: Always start with a high-level view of the objects and their relationships before you deal with specific fields.
-- Rule #2: Never expose implementation details in your API design.
-- Rule #3: Design your API around the business domain, not the implementation, user-interface, or legacy APIs.
-- Rule #4: It’s easier to add fields than to remove them.
-- Rule #5: Major business-object types should always implement Node.
-- Rule #6: Group closely-related fields together into subobjects.
-- Rule #7: Always check whether list fields should be paginated or not.
-- Rule #8: Always use object references instead of ID fields.
-- Rule #9: Choose field names based on what makes sense, not based on the implementation or what the field is called in legacy APIs.
-- Rule #10: Use custom scalar types when you’re exposing something with specific semantic value.
-- Rule #11: Use enums for fields which can only take a specific set of values.
-- Rule #12: The API should provide business logic, not just data. Complex calculations should be done on the server, in one place, not on the client, in many places.
-- Rule #13: Provide the raw data too, even when there’s business logic around it.
-- Rule #14: Write separate mutations for separate logical actions on a resource.
-- Rule #15: Mutating relationships is really complicated and not easily summarized into a snappy rule.
-- Rule #16: When writing separate mutations for relationships, consider whether it would be useful for the mutations to operate on multiple elements at once.
-- Rule #17: Prefix mutation names with the object they are mutating for
- alphabetical grouping (e.g. use `orderCancel` instead of `cancelOrder`).
-- Rule #18: Only make input fields required if they're actually semantically required for the mutation to proceed.
-- Rule #19: Use weaker types for inputs (e.g. String instead of Email) when the format is unambiguous and client-side validation is complex. This lets the server run all non-trivial validations at once and return the errors in a single place in a single format, simplifying the client.
-- Rule #20: Use stronger types for inputs (e.g. DateTime instead of String) when the format may be ambiguous and client-side validation is simple. This provides clarity and encourages clients to use stricter input controls (e.g. a date-picker widget instead of a free-text field).
-- Rule #21: Structure mutation inputs to reduce duplication, even if this requires relaxing requiredness constraints on certain fields.
-- Rule #22: For update mutations, the parameter relating to selecting the entry must be separate to the parameter providing the change data. The parameter relating to selecting the entry must come first.
-- Rule #23: Mutations should provide user/business-level errors via a userErrors field on the mutation payload. The top-level query errors entry is reserved for client and server-level errors.
-- Rule #24: Most payload fields for a mutation should be nullable, unless there is really a value to return in every possible error case.
+- <a href="#user-content-start-with-high-level-view">Rule:</a> Always start with a high-level view of the objects and their relationships before you deal with specific fields.
+- <a href="#user-content-never-expose-implementation-details">Rule:</a> Never expose implementation details in your API design.
+- <a href="#user-content-design-around-business-domain">Rule:</a> Design your API around the business domain, not the implementation, user-interface, or legacy APIs.
+- <a href="#user-content-easier-to-add-than-remove">Rule:</a> It's easier to add fields than to remove them.
+- <a href="#user-content-business-object-types-implement-node" id="user-content-business-object-types-implement-node">Rule:</a> Major business-object types should always implement `Node`.
+- <a href="#user-content-group-related-into-subobjects">Rule:</a> Group closely-related fields together into subobjects.
+- <a href="#user-content-check-if-list-should-be-paginated">Rule:</a> Always check whether list fields should be paginated or not.
+- <a href="#user-content-use-object-refs">Rule:</a> Always use object references instead of ID fields.
+- <a href="#user-content-choose-names-that-make-sense">Rule:</a> Choose field names based on what makes sense, not based on the implementation or what the field is called in legacy APIs.
+- <a href="#user-content-custom-scalar-types">Rule:</a> Use custom scalar types when you're exposing something with specific semantic value.
+- <a href="#user-content-use-enums-for-value-sets">Rule:</a> Use enums for fields which can only take a specific set of values.
+- <a href="#user-content-complex-calculations-on-server">Rule:</a> The API should provide business logic, not just data. Complex calculations should be done on the server, in one place, not on the client, in many places.
+- <a href="#user-content-provide-raw-data">Rule:</a> Provide the raw data too, even when there's business logic around it.
+- <a href="#user-content-separate-mutations">Rule:</a> Write separate mutations for separate logical actions on a resource.
+- <a href="#user-content-mutating-relationships-is-hard">Rule:</a> Mutating relationships is really complicated and not easily summarized into a snappy rule.
+- <a href="#user-content-consider-mutations-on-multiple-elements">Rule:</a> When writing separate mutations for relationships, consider whether it would be useful for the mutations to operate on multiple elements at once.
+- <a href="#user-content-prefix-mutation-names-for-alphabetical-grouping">Rule:</a> Prefix mutation names with the object they are mutating for alphabetical grouping (e.g. use `orderCancel` instead of `cancelOrder`).
+- <a href="#user-content-semantically-required">Rule:</a> Only make input fields required if they're actually semantically required for the mutation to proceed.
+- <a href="#user-content-use-weaker-types-in-complex-cases">Rule:</a> Use weaker types for inputs (e.g. `String` instead of `Email`) when the format is unambiguous and client-side validation is complex. This lets the server run all non-trivial validations at once and return the errors in a single place in a single format, simplifying the client.
+- <a href="#user-content-use-stronger-types-in-simple-cases">Rule:</a> Use stronger types for inputs (e.g. `DateTime` instead of `String`) when the format may be ambiguous and client-side validation is simple. This provides clarity and encourages clients to use stricter input controls (e.g. a date-picker widget instead of a free-text field).
+- <a href="#user-content-reduce-mutation-duplication">Rule:</a> Structure mutation inputs to reduce duplication, even if this requires relaxing requiredness constraints on certain fields.
+- <a href="#user-content-mutation-select-before-update">Rule:</a> For update mutations, the parameter relating to selecting the entry must be separate to the parameter providing the change data. The parameter relating to selecting the entry must come first.
+- <a href="#user-content-use-usererrors">Rule:</a> Mutations should provide user/business-level errors via a `userErrors` field on the mutation payload. The top-level query errors entry is reserved for client and server-level errors.
+- <a href="#user-content-allow-nullable-fields-in-mutations">Rule:</a> Most payload fields for a mutation should be nullable, unless there is really a value to return in every possible error case.
 
 ## Conclusion
 
