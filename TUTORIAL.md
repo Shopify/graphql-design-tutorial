@@ -1059,7 +1059,7 @@ return in every possible error case.*
 - <a href="#user-content-never-expose-implementation-details">Rule:</a> Never expose implementation details in your API design.
 - <a href="#user-content-design-around-business-domain">Rule:</a> Design your API around the business domain, not the implementation, user-interface, or legacy APIs.
 - <a href="#user-content-easier-to-add-than-remove">Rule:</a> It's easier to add fields than to remove them.
-- <a href="#user-content-business-object-types-implement-node" id="user-content-business-object-types-implement-node">Rule:</a> Major business-object types should always implement `Node`.
+- <a href="#user-content-business-object-types-implement-node">Rule:</a> Major business-object types should always implement `Node`.
 - <a href="#user-content-group-related-into-subobjects">Rule:</a> Group closely-related fields together into subobjects.
 - <a href="#user-content-check-if-list-should-be-paginated">Rule:</a> Always check whether list fields should be paginated or not.
 - <a href="#user-content-use-object-refs">Rule:</a> Always use object references instead of ID fields.
