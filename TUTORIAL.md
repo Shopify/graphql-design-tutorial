@@ -170,8 +170,9 @@ To get this simplified representation, I took out all scalar fields, all field
 names, and all nullability information. What you're left with still looks kind
 of like GraphQL, but it lets you focus on the types and their relationships from a higher level.
 
-*Rule #1: Always start with a high-level view of the objects and their
-relationships before you deal with specific fields.*
+*<a href="#start-with-high-level-view" id="#start-with-high-level-view">Rule:</a>
+Always start with a high-level view of the objects and their relationships
+before you deal with specific fields.*
 
 ## Step Two: A Clean Slate
 
