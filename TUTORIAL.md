@@ -960,8 +960,7 @@ However, this  is no longer recommended, as it makes it difficult to determine
 which parts of the call relate to 'select', and which relate to 'update'.
 
 *Rule #22: For update mutations, the parameter relating to selecting the entry
-must be separate to the parameter providing the change data. The parameter
-relating to selecting the entry must come first.*
+must be separate to the parameter providing the change data.*
 
 ### Output
 
@@ -1040,7 +1039,7 @@ return.
 - Rule #19: Use weaker types for inputs (e.g. String instead of Email) when the format is unambiguous and client-side validation is complex. This lets the server run all non-trivial validations at once and return the errors in a single place in a single format, simplifying the client.
 - Rule #20: Use stronger types for inputs (e.g. DateTime instead of String) when the format may be ambiguous and client-side validation is simple. This provides clarity and encourages clients to use stricter input controls (e.g. a date-picker widget instead of a free-text field).
 - Rule #21: Structure mutation inputs to reduce duplication, even if this requires relaxing requiredness constraints on certain fields.
-- Rule #22: For update mutations, the parameter relating to selecting the entry must be separate to the parameter providing the change data. The parameter relating to selecting the entry must come first.
+- Rule #22: For update mutations, the parameter relating to selecting the entry must be separate to the parameter providing the change data.
 - Rule #23: Mutations should provide user/business-level errors via a userErrors field on the mutation payload. The top-level query errors entry is reserved for client and server-level errors.
 - Rule #24: Most payload fields for a mutation should be nullable, unless there is really a value to return in every possible error case.
 
