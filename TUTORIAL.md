@@ -953,10 +953,10 @@ input CollectionInput {
 
 As in the example above, `collectionUpdate` takes two arguments. `collectionId`
 selects the collection to update, and `collection` provides the update data. An
-alternative to this would be a single merged `collection: CollectionInput!` argument, where
-`CollectionInput` would have a nullable `id` input field. However, this makes it
-difficult to determine which parts of the call relate to 'select', and which relate
-to 'update' and is not recommended.
+alternative to this would be a single merged `collection: CollectionInput!`
+argument, where `CollectionInput` would have a nullable `id` input field.
+However, this makes it difficult to determine which parts of the call relate to
+'select', and which relate to 'update', and is therefore not recommended.
 
 *Rule #22: For update mutations, the parameter relating to selecting the entry
 must be separate to the parameter providing the change data.*
