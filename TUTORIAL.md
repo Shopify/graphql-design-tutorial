@@ -951,13 +951,12 @@ input CollectionInput {
 *Rule #21: Structure mutation inputs to reduce duplication, even if this
  requires relaxing requiredness constraints on certain fields.*
 
-As in the example above, `collectionUpdate` takes two arguments. The first
-selects the collection to update, and the second provides the update data. An
-alternative to this would be one argument, `CollectionInput!`, which would
-include the ID. In fact, [some older Shopify APIs follow this
-pattern](https://shopify.dev/docs/api/admin-graphql/2023-07/mutations/productUpdate).
-However, this  is no longer recommended, as it makes it difficult to determine
-which parts of the call relate to 'select', and which relate to 'update'.
+As in the example above, `collectionUpdate` takes two arguments. `collectionId`
+selects the collection to update, and `collection` provides the update data. An
+alternative to this would be a single merged `collection: CollectionInput!` argument, where
+`CollectionInput` would have a nullable `id` input field. However, this makes it
+difficult to determine which parts of the call relate to 'select', and which relate
+to 'update' and is not recommended.
 
 *Rule #22: For update mutations, the parameter relating to selecting the entry
 must be separate to the parameter providing the change data.*
