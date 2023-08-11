@@ -951,6 +951,18 @@ input CollectionInput {
 *Rule #21: Structure mutation inputs to reduce duplication, even if this
  requires relaxing requiredness constraints on certain fields.*
 
+As in the example above, `collectionUpdate` takes two arguments. `collectionId`
+selects the collection to update, and `collection` provides the update data. An
+alternative to this would be a single merged `collection: CollectionInput!`
+argument, where `CollectionInput` would have a nullable `id` input field.
+However, this makes it difficult to determine which parts of the call relate to
+'select', and which relate to 'update', and is therefore not recommended.
+
+*Rule #22: For update mutations, the argument relating to selecting the entry
+must be separate to the argument providing the change data. The argument to
+select the entry should be non-nullable unless there's value in making the
+condition an optional filter.*
+
 ### Output
 
 The final design question we need to deal with is the return value of our
@@ -981,7 +993,7 @@ would return the newly-created collection for the `collection` field. An
 unsuccessful mutation would return one or more `UserError` objects, and `null`
 for the collection.
 
-*Rule #22: Mutations should provide user/business-level errors via a
+*Rule #23: Mutations should provide user/business-level errors via a
  `userErrors` field on the mutation payload. The top-level query errors entry is
  reserved for client and server-level errors.*
 
@@ -1001,7 +1013,7 @@ It's worth noting that `collection` is still nullable even here, since if the
 provided ID doesn't represent a valid collection, there is no collection to
 return.
 
-*Rule #23: Most payload fields for a mutation should be nullable, unless there
+*Rule #24: Most payload fields for a mutation should be nullable, unless there
  is really a value to return in every possible error case.*
 
 ## TLDR: The rules
@@ -1028,8 +1040,9 @@ return.
 - Rule #19: Use weaker types for inputs (e.g. String instead of Email) when the format is unambiguous and client-side validation is complex. This lets the server run all non-trivial validations at once and return the errors in a single place in a single format, simplifying the client.
 - Rule #20: Use stronger types for inputs (e.g. DateTime instead of String) when the format may be ambiguous and client-side validation is simple. This provides clarity and encourages clients to use stricter input controls (e.g. a date-picker widget instead of a free-text field).
 - Rule #21: Structure mutation inputs to reduce duplication, even if this requires relaxing requiredness constraints on certain fields.
-- Rule #22: Mutations should provide user/business-level errors via a userErrors field on the mutation payload. The top-level query errors entry is reserved for client and server-level errors.
-- Rule #23: Most payload fields for a mutation should be nullable, unless there is really a value to return in every possible error case.
+- Rule #22: For update mutations, the argument relating to selecting the entry must be separate to the argument providing the change data. The argument to select the entry should be non-nullable unless there's value in making the condition an optional filter.
+- Rule #23: Mutations should provide user/business-level errors via a userErrors field on the mutation payload. The top-level query errors entry is reserved for client and server-level errors.
+- Rule #24: Most payload fields for a mutation should be nullable, unless there is really a value to return in every possible error case.
 
 ## Conclusion
 
