@@ -652,6 +652,12 @@ input CollectionInput {
 
 <sub>🧚‍♀ <옮긴이> 완화된 필수 조건(relaxing requiredness constraints): collectionUpdate의 title처럼, `!`는 붙지 않았지만 반드시 있을 것이라고 기대되는 필드를 말하는 것 같습니다.</sub>
 
+위의 예시와 같이 `collectionUpdate` 함수는 두 개의 인자를 받습니다. `collectionId`는 업데이트할 컬렉션을 선택하고, `collection`은 업데이트할 데이터를 제공합니다. 
+이에 대한 대안은 null이 될 수 있는 id 필드를 가진 하나의 `collection: CollectionInput!` 인자입니다. 
+그러나 이 방법은 호출의 어떤 부분이 'select'과 관련이 있는지, 어떤 부분이 'update'와 관련이 있는지 판단하기 어렵게 만들기 때문에 권장하지 않습니다.
+
+*규칙 #22: 업데이트 mutation에 있어 객체선택에 관련한 인자와 변경 데이터를 제공하는 인자는 분리해야 합니다.  객체 선택과 관련한 인자는 필터링 조건을 제외하면 null로 설정할 수 없어야 합니다.*
+
 ### Output
 
 우리가 다룰 마지막 설계 문제는 mutatoin의 반환 값입니다. mutatoin은 성공하거나 실패할 수 있습니다. GraphQL은 쿼리 수준의 오류에 대해서는 확실하게 지원해주지만, 비즈니스 수준에서 mutation이 실패하는 것에 대해서는 그렇지 않습니다. 그러니 사용자보다는 클라이언트 측의 실수(예: 존재하지 않는 필드를 요청)에 대한 최상위 수준의 오류에 대비해야 합니다. 마찬가지로, 각 mutation은 유용한 다른 값들과 함께 사용자 오류에 대응하는 필드를 포함하는 "payload" type을 정의해야 합니다. Create라면 다음과 같이 표현할 수 있습니다:
@@ -672,7 +678,7 @@ type UserError {
 
 mutatoin이 성공한다면 `userErrors`에서는 빈 리스트를, `collection` 필드에서는 새롭게 생성된 collection을 반환할 것입니다. mutation이 성공하지 않는다면 하나 이상의 `userErrors` 객체를, collection 필드에는 `null`을 반환할 것입니다.
 
-*규칙 #22: mutation은 mutation payload에서 `userErrors` 필드를 통해 사용자/비즈니스 수준의 오류를 처리해야 합니다. 최상위 수준의 쿼리 오류 엔트리(The top-level query errors entry)는 클라이언트와 서버 수준의 오류에 대비해야 합니다.*
+*규칙 #23: mutation은 mutation payload에서 `userErrors` 필드를 통해 사용자/비즈니스 수준의 오류를 처리해야 합니다. 최상위 수준의 쿼리 오류 엔트리(The top-level query errors entry)는 클라이언트와 서버 수준의 오류에 대비해야 합니다.*
 
 많은 구현에서, 이런 구조는 대부분 자동으로 제공됩니다. 여러분은 그저 `collection`의 반환 필드만 정의하면 됩니다.
 
@@ -687,7 +693,7 @@ type CollectionUpdatePayload {
 
 `collection`이 null이 가능하다는 것에 주목해주세요. 이는 제공된 ID가 유효한 collection을 나타내지 않는다면, 반환할 collection이 없기 때문입니다.
 
-*규칙 #23: 발생 가능한 모든 오류 케이스에서, 필드 값이 반드시 반환될 것이라는 확신이 들지 않는다면 mutation에 대한 대부분의 payload 필드는 null이 가능하도록 하는 게 좋습니다.*
+*규칙 #24: 발생 가능한 모든 오류 케이스에서, 필드 값이 반드시 반환될 것이라는 확신이 들지 않는다면 mutation에 대한 대부분의 payload 필드는 null이 가능하도록 하는 게 좋습니다.*
 
 ## TLDR: The rules
 
@@ -712,8 +718,9 @@ type CollectionUpdatePayload {
 - *규칙 #19: 형식이 명확하고, 클라이언트 측에서 유효성 검사를 하기에 복잡할 것 같다면, input에 좀 더 약한 타입(예: `Email` 대신 `String`)을 사용하세요. 그러면, 서버가 모든 non-trivial한 유효성 검사를 한 번에 할 수 있고, 클라이언트는 조금 더 간단하게 만들면서 단일 형식으로 한 장소에서 오류를 반환할 수 있습니다.*
 - *규칙 #20: 형식이 모호하고, 클라이언트 측에서의 유효성 검사가 간단해보일 땐, input에 더 강한 타입(예: `String` 대신에 `DateTime`)을 사용하세요. 이는 명확성을 제공하고, 클라이언트가 좀 더 엄격하게 input 값을 통제할 수 있도록 만듭니다(예: free-text 필드 애신 날짜 선택 위젯을 사용하는 등).*
 - *규칙 #21: 특정 필드에서 \*완화된 '필수' 조건이 필요하다 하더라도, 중복을 줄일 수 있도록 mutation input을 짜보세요.*
-- *규칙 #22: mutation은 mutation payload에서 `userErrors` 필드를 통해 사용자/비즈니스 수준의 오류를 처리해야 합니다. 최상위 수준의 쿼리 오류 엔트리(The top-level query errors entry)는 클라이언트와 서버 수준의 오류에 대비해야 합니다.*
-- *규칙 #23: 발생 가능한 모든 오류 케이스에서, 필드 값이 반드시 반환될 것이라는 확신이 들지 않는다면 mutation에 대한 대부분의 payload 필드는 null이 가능하도록 하는 게 좋습니다.*
+- *규칙 #22: 업데이트 mutation에 있어 객체선택에 관련한 인자와 변경 데이터를 제공하는 인자는 분리해야 합니다.  객체 선택과 관련한 인자는 필터링 조건을 제외하면 null로 설정할 수 없어야 합니다.*
+- *규칙 #23: mutation은 mutation payload에서 `userErrors` 필드를 통해 사용자/비즈니스 수준의 오류를 처리해야 합니다. 최상위 수준의 쿼리 오류 엔트리(The top-level query errors entry)는 클라이언트와 서버 수준의 오류에 대비해야 합니다.*
+- *규칙 #24: 발생 가능한 모든 오류 케이스에서, 필드 값이 반드시 반환될 것이라는 확신이 들지 않는다면 mutation에 대한 대부분의 payload 필드는 null이 가능하도록 하는 게 좋습니다.*
 
 ## Conclusion
 
