@@ -742,8 +742,8 @@ styles we could broadly consider:
   `productsToRemove: [ID!]!`) into the update mutation is more efficient since
   only the changed IDs need to be specified instead of the entire list, but it
   still keeps the actions tied together.
-- Splitting it up entirely into separate mutations (`addProduct`,
-  `removeProduct`, etc.) is the most powerful and flexible but also the most
+- Splitting it up entirely into separate mutations (`productAdd`,
+  `productRemove`, etc.) is the most powerful and flexible but also the most
   work.
 
 The last option is generally the safest call, especially since mutations like
@@ -755,7 +755,7 @@ of factors to consider:
   it's one-to-one), embedding may be the simplest choice.
 - Is the relationship ordered? The product-collection relationship is ordered,
   and permits manual reordering. Order is naturally supported by the embedded
-  list or by separate mutations (you can add a `reorderProducts` mutation)
+  list or by separate mutations (you can add a `productsReorder` mutation)
   but isn't an option for delta fields.
 - Is the relationship mandatory? Products and collections can both exist on
   their own outside of the relationship, with their own create/delete lifecycle.
@@ -779,16 +779,16 @@ of factors to consider:
 - update
 - publish
 - unpublish
-- addProducts
-- removeProducts
-- reorderProducts
+- productsAdd
+- productsRemove
+- productsReorder
 
 Products we split into their own mutations, because the relationship is large
 and ordered. Rules we left inline because the relationship is small, and rules
 are sufficiently minor to not have IDs.
 
 Finally, you may note our product mutations act on sets of products, for example
-`addProducts` and not `addProduct`. This is simply a convenience for the client,
+`productsAdd` and not `productAdd`. This is simply a convenience for the client,
 since the common use case when manipulating this relationship will be to add,
 remove, or reorder more than one product at a time.
 
@@ -808,13 +808,13 @@ For many simple mutations, an ID or a handful of IDs are all that is needed,
 making this step quite simple. Among collections, we can quickly knock out the
 following mutation arguments:
 - `delete`, `publish` and `unpublish` all simply need a single collection ID
-- `addProducts` and `removeProducts` both need the collection ID as well as a
+- `productsAdd` and `productsRemove` both need the collection ID as well as a
   list of product IDs
 
 This leaves us with only three remaining "complicated" inputs to design:
 - create
 - update
-- reorderProducts
+- productsReorder
 
 Let's start with create. A very naive input might look kind of like our original
 naive collection model when we started, but we can already do better than that.
